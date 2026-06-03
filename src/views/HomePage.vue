@@ -14,8 +14,8 @@
       </ion-header>
 
       <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+        <strong>Agri:Akap</strong>
+        <p>Agricultural Assistance and Knowledge Access Portal for Managing Farmers' Subsidies and Support Programs in the Municipal Agriculture Office <a target="_blank" rel="noopener noreferrer" href="https://docs.google.com/document/d/12ZVbPlF_JLCsDqht3OablhzTiu0rfR1pfaPcnWAUk6g/edit?tab=t.0">Paper</a></p>
       </div>
     </ion-content>
   </ion-page>
