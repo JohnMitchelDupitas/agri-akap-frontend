@@ -4,6 +4,9 @@ import router from '@/router';
 // We use import.meta.env to grab the URL from your Vite environment variables
 // Fallback to localhost if the environment variable isn't set yet
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+console.log('✅ VITE_API_URL loaded:', import.meta.env.VITE_API_URL);
+console.log('✅ Final baseURL being used:', baseURL);
+console.log('Axios baseURL:', baseURL); // Add this to verify
 
 const instance = axios.create({
     baseURL: baseURL,

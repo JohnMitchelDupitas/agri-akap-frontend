@@ -556,9 +556,8 @@ import {
   IonTextarea,} from "@ionic/vue";
 
 import { reactive, ref } from "vue";
-import axios from "axios";
+import axiosInstance from "@/utils/axios";
 import { useRouter } from "vue-router";
-import { use } from "../global";
 import AppNavbar from '@/components/AppNavbar.vue';
 
 const router = useRouter();
@@ -734,10 +733,9 @@ const submitForm = async () => {
   }
   isSubmitting.value = true;
   try {
-    const res = await axios.post(
-      `${use}/register_farmer.php`,
-      { farmer: { ...farmer, age: computedAge.value }, farms: farmPlots },
-      { headers: { "Content-Type": "application/json" } }
+    const res = await axiosInstance.post(
+      '/register_farmer',
+      { farmer: { ...farmer, age: computedAge.value }, farms: farmPlots }
     );
     if (res.status === 200) {
       alert("Enrollment submitted successfully!");
