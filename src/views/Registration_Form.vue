@@ -201,7 +201,7 @@
               <div class="fgrid g2">
                 <div class="field-wrap">
                   <label class="flabel req">MOBILE NUMBER</label>
-                  <ion-input v-model="farmer.mobile_number" class="finput" placeholder="09XXXXXXXXX" maxlength="11" />
+                  <ion-input v-model="farmer.mobile_number" class="finput" placeholder="09XXXXXXXXX" :maxlength="11" />
                   <div class="inline-chk mt4">
                     <ion-checkbox v-model="farmer.is_mobile_owner" class="fcheck" />
                     <span class="chk-label">I am the owner of this mobile number</span>
@@ -559,6 +559,7 @@ import { reactive, ref } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { use } from "../global";
+import AppNavbar from '@/components/AppNavbar.vue';
 
 const router = useRouter();
 
