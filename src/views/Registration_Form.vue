@@ -819,7 +819,7 @@ const submitForm = async () => {
 
 .page-wrapper {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 0;
   padding: 12px 12px 64px;
 }
 

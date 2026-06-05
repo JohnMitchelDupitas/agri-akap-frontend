@@ -1,0 +1,25 @@
+/* Desktop */
+.responsive-split {
+  --side-width: 250px;
+  --side-max-width: 250px;
+}
+
+/* Mobile — icon-only sidebar */
+@media (max-width: 700px) {
+  .responsive-split {
+    --side-width: 56px;
+    --side-max-width: 56px;
+    --border: none;
+    --side-border: none;
+  }
+
+  /* Force the split pane's internal divider element to zero width */
+  .responsive-split::part(container) {
+    gap: 0 !important;
+  }
+  ion-menu {
+    --border: none;
+    border-right: none !important;
+    box-shadow: none !important;
+  }
+}
