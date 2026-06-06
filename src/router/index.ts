@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import HomePage from '../views/HomePage.vue';
 import Registration_Form from '@/views/Registration_Form.vue';
-import LoginPage from '@/views/LogInPage.vue';
+import LoginPage from '@/views/LoginPage.vue';
+import { useAuthStore } from '../stores/authStore';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -17,7 +18,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/register',
     name: 'Registration_Form',
-    component: Registration_Form
+    component: () => import('@/views/Farmers/Registration_Form.vue'),
   },
   {
     path: '/dashboard',
@@ -27,8 +28,28 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginPage
+    component: () => import('@/views/LoginPage.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/dashboard',
+    name: 'AdminDashboard',
+    component: () => import('@/views/DashboardPage.vue'),
+    meta: { 
+      requiresAuth: true,
+      role: 'admin' // Only admins can access
+    }
+  },
+  {
+    path: '/technician-home',
+    name: 'TechnicianHome',
+    component: () => import('@/views/HomePage.vue'), // Or a specific Tech UI
+    meta: { 
+      requiresAuth: true,
+      role: 'technician' // Only technicians can access
+    }
   }
+
 ]
 
 const router = createRouter({
@@ -36,4 +57,38 @@ const router = createRouter({
   routes
 })
 
+// DEVELOPER MODE SWITCH
+// Set to true to let UI designers work freely without logging in.
+// Set to false for production / testing real API data.
+const DEV_BYPASS_AUTH = true;
+
+// Global Route Guard
+router.beforeEach((to, from, next) => {
+
+  if (DEV_BYPASS_AUTH) {
+    return next(); 
+  }
+
+  const authStore = useAuthStore();
+  const isAuthenticated = authStore.isAuthenticated;
+  const userRole = authStore.userRole?.value;
+
+  // 1. If route requires auth and user is NOT logged in
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ name: 'Login' });
+  } 
+  // 2. If user is logged in, restrict access by role
+  else if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
+    // Redirect to their respective default page if they try to access the wrong role's page
+    next(userRole === 'admin' ? { name: 'AdminDashboard' } : { name: 'TechnicianHome' });
+  }
+  // 3. If logged-in user tries to access the login page
+  else if (to.name === 'Login' && isAuthenticated) {
+    next(userRole === 'admin' ? { name: 'AdminDashboard' } : { name: 'TechnicianHome' });
+  } 
+  // 4. Otherwise, let them proceed
+  else {
+    next();
+  }
+});
 export default router

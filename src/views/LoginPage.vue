@@ -71,15 +71,17 @@ import {
   IonItem,
   IonInput,
 } from "@ionic/vue";
-import { person, lockClosed, eye, eyeOff, leaf } from "ionicons/icons";
+import { person, lockClosed, eye, eyeOff } from "ionicons/icons";
 import axios from "axios";
-// import { use } from "../global"; // Make sure to uncomment this in your actual project
-const use = "http://localhost:8000"; // Placeholder for preview purposes
 import { useRouter } from "vue-router";
 
+// Point to your Laravel backend
+const API_URL = "http://127.0.0.1:8000"; 
 const router = useRouter();
+
 const isSubmitting = ref(false);
 const showPassword = ref(false);
+
 const credentials = reactive({
   email: "",
   password: "",
@@ -94,30 +96,54 @@ const login = async () => {
     alert("Email and password are required");
     return;
   }
+
   isSubmitting.value = true;
+
   try {
-    const response = await axios.post(use + "/api/login", credentials, {
-      headers: { "Content-Type": "application/json" },
+    // FIX 1: Attach a device_name to the payload to satisfy the backend requirement
+    const payload = {
+      email: credentials.email,
+      password: credentials.password,
+      device_name: navigator.userAgent || "Web Dashboard", 
+    };
+
+    const response = await axios.post(`${API_URL}/api/login`, payload, {
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
     });
 
-    if (response.status === 200 && response.data.success) {
-      alert("Log In Successfully");
+    // FIX 2: Check for our custom API contract -> response.data.status === 'success'
+    if (response.status === 200 && response.data.status === 'success') {
+      
+      const responseData = response.data.data; // Our standardized data wrapper
 
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      // FIX 3: Store BOTH the Token and the User profile
+      localStorage.setItem("token", responseData.access_token);
+      localStorage.setItem("user", JSON.stringify(responseData.user));
 
-      if (response.data.user.role === "admin") {
-        router.push("/adminpage");
+      alert("Log In Successful!");
+
+      // Route based on RBAC (matching the exact roles from our migration)
+      if (responseData.user.role === "admin") {
+        router.push("/dashboard"); // Adjust to your actual admin route
       } else {
-        router.push("/Main");
+        router.push("/HomePage"); // Adjust to your actual tech route
       }
+
+      // Clear form
       credentials.email = "";
       credentials.password = "";
-    } else {
-      alert(response.data.message || "Invalid credentials");
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login Error:", error);
-    alert("An error occurred while logging in.");
+    
+    // Better error handling to show EXACTLY what Laravel is rejecting
+    if (error.response && error.response.status === 422) {
+      alert("Validation Error: Please check your email and password format.");
+    } else if (error.response && error.response.status === 401) {
+      alert(error.response.data.message || "Invalid email or password.");
+    } else {
+      alert("Network error. Ensure your Laravel backend is running on port 8000.");
+    }
   } finally {
     isSubmitting.value = false;
   }
