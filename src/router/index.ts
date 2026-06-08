@@ -4,6 +4,7 @@ import HomePage from '../views/HomePage.vue';
 import Registration_Form from '@/views/Registration_Form.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import { useAuthStore } from '../stores/authStore';
+import FarmersListPage from '@/views/Farmers/FarmersListPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -19,6 +20,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/register',
     name: 'Registration_Form',
     component: () => import('@/views/Farmers/Registration_Form.vue'),
+  },
+  {
+    path: '/farmers',
+    name: 'FarmersList',
+    component: FarmersListPage
   },
   {
     path: '/dashboard',

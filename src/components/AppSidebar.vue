@@ -80,7 +80,7 @@ const appPages = [
   },
   {
     title: "Farmers",
-    url: "/register",
+    url: "/farmers",
     iosIcon: personOutline,
     mdIcon: personSharp,
   },
