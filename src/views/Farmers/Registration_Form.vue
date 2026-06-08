@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar class="rsbsa-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button default-href="/home" class="back-btn" />
+          <ion-back-button default-href="/farmers" class="back-btn" />
         </ion-buttons>
         <ion-title class="toolbar-title">RSBSA Enrollment Form</ion-title>
       </ion-toolbar>

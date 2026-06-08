@@ -31,5 +31,5 @@ import { computed } from 'vue';
 
 const route = useRoute();
 
-const showShell = computed(() => route.name !== 'Login');
+const showShell = computed(() => route.name !== 'Login' && route.name !== 'Registration_Form');
 </script>
