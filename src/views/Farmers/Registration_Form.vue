@@ -34,7 +34,7 @@
         <div class="tx-row">
           <div class="field-wrap">
             <label class="flabel">TRANSACTION CODE</label>
-            <ion-input v-model="farmer.transaction_code" class="finput" placeholder="e.g. NCR-001-2025" />
+            <ion-input v-model="farmer.transaction_code" class="finput" readonly />
           </div>
           <div class="field-wrap">
             <label class="flabel">RSBSA NO.</label>
@@ -541,34 +541,25 @@
 
 <script setup lang="ts">
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle, 
-  IonContent,
-  IonInput, 
-  IonSelect, 
-  IonSelectOption, 
-  IonButton, 
-  IonButtons,
-  IonBackButton, 
-  IonCheckbox, 
-  IonTextarea,} from "@ionic/vue";
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+  IonInput, IonSelect, IonSelectOption, IonButton, IonButtons,
+  IonBackButton, IonCheckbox, IonTextarea
+} from "@ionic/vue";
 
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import axiosInstance from "@/utils/axios";
 import { useRouter } from "vue-router";
-import AppNavbar from '@/components/AppNavbar.vue';
+// import AppNavbar from '@/components/AppNavbar.vue'; // Unused in this layout
 
 const router = useRouter();
 
-/*  state  */
+/* state  */
 const isSubmitting  = ref(false);
 const errorMsg      = ref("");
 const sameAddress   = ref(false);
 const computedAge   = ref<number | "">("");
 
-/*  option ka lang  */
+/* options  */
 const civilStatusOptions = ["Single", "Married", "Widow/er", "Legally Separated"];
 const educationOptions   = [
   "Pre-school","Elementary","High School non K-12",
@@ -583,7 +574,7 @@ const livelihoodTypes = ["Farmer","Farm Worker","Fisher","Agri-Youth"];
 const ownershipTypes  = ["Registered Owner","Tenant","Lessee","Others"];
 const farmTypes       = ["Irrigated","Rainfed Upland","Rainfed Lowland","Urban/Peri-Urban"];
 
-/*  farmer details */
+/* farmer details */
 const farmer = reactive({
   rsbsa_no: "",
   transaction_code: "", 
@@ -598,9 +589,9 @@ const farmer = reactive({
   permanent_house_no: "", 
   permanent_street: "", 
   permanent_brgy: "",
-  permanent_city: "", 
-  permanent_province: "", 
-  permanent_region: "",
+  permanent_city: "Echague", 
+  permanent_province: "Isabela", 
+  permanent_region: "Region II",
   provincial_house_no: "", 
   provincial_street: "", 
   provincial_brgy: "",
@@ -658,7 +649,8 @@ const createPlot = () => ({
   size_ha: "" as string|number,
   no_of_heads_or_trees: "" as string|number,
   farm_type: "", 
-  is_organic: false, cropping_schedule: "",
+  is_organic: false, 
+  cropping_schedule: "",
   rotational_tiller_full_name: "", 
   remarks: "",
 });
@@ -666,7 +658,7 @@ const farmPlots = reactive([createPlot()]);
 const addPlot    = () => farmPlots.push(createPlot());
 const removePlot = (i: number) => farmPlots.splice(i, 1);
 
-/*  age compute */
+/* age compute */
 const computeAge = () => {
   if (!farmer.birthdate) { computedAge.value = ""; return; }
   const birth = new Date(farmer.birthdate), now = new Date();
@@ -675,6 +667,7 @@ const computeAge = () => {
   if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
   computedAge.value = age;
 };
+
 const onNoMiddleName = () => { if (farmer.no_middle_name) farmer.middle_name = ""; };
 const onNoExtName    = () => { if (farmer.no_ext_name)    farmer.ext_name = ""; };
 const onSameAddress  = () => {
@@ -691,12 +684,31 @@ const onSameAddress  = () => {
   }
 };
 
+/* ── Auto-Generate Transaction Code ── */
+const generateTransactionCode = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  // Generates 4 random uppercase letters/numbers
+  const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase(); 
+  
+  return `ECH-${year}${month}-${randomStr}`; // e.g., ECH-202606-A1B2
+};
+
+// Trigger when the page loads
+onMounted(() => {
+  farmer.transaction_code = generateTransactionCode();
+});
+
 /* validation */
 const validate = (): boolean => {
   errorMsg.value = "";
   const req = (v: string, msg: string) => { if (!v.trim()) { errorMsg.value = msg; return false; } return true; };
-  if (!req(farmer.surname,           "Surname is required."))              return false;
-  if (!req(farmer.first_name,        "First Name is required."))           return false;
+  
+  // FIX 3: Added Transaction Code Validation
+  if (!req(farmer.transaction_code,  "Transaction Code is required.")) return false;
+  if (!req(farmer.surname,           "Surname is required."))          return false;
+  if (!req(farmer.first_name,        "First Name is required."))       return false;
   if (!farmer.sex)                   { errorMsg.value = "Sex is required."; return false; }
   if (!farmer.birthdate)             { errorMsg.value = "Birthdate is required."; return false; }
   if (!req(farmer.permanent_brgy,    "Permanent Barangay is required."))   return false;
@@ -710,11 +722,10 @@ const validate = (): boolean => {
   if (!farmer.civil_status)          { errorMsg.value = "Civil Status is required."; return false; }
   if (!farmer.highest_education)     { errorMsg.value = "Highest Education is required."; return false; }
   if (!farmer.livelihood_type)       { errorMsg.value = "Livelihood type is required."; return false; }
+  
   for (let i = 0; i < farmPlots.length; i++) {
     const p = farmPlots[i], n = `Farm Plot ${i+1}`;
     if (!p.location_brgy.trim())               { errorMsg.value = `${n}: Barangay is required.`;             return false; }
-    if (!p.location_city.trim())               { errorMsg.value = `${n}: Municipality/City is required.`;    return false; }
-    if (!p.location_province.trim())           { errorMsg.value = `${n}: Province is required.`;             return false; }
     if (!p.total_parcel_area_ha)               { errorMsg.value = `${n}: Total Parcel Area is required.`;    return false; }
     if (!p.ownership_type)                     { errorMsg.value = `${n}: Ownership Type is required.`;       return false; }
     if (!p.proof_of_ownership_document.trim()) { errorMsg.value = `${n}: Proof of Ownership is required.`;   return false; }
@@ -732,17 +743,37 @@ const submitForm = async () => {
     return;
   }
   isSubmitting.value = true;
+  errorMsg.value = ""; // clear previous errors
+
   try {
-    const res = await axiosInstance.post(
-      '/register_farmer',
-      { farmer: { ...farmer, age: computedAge.value }, farms: farmPlots }
-    );
-    if (res.status === 200) {
+    // FIX 1: Exact payload match to Laravel's StoreFarmerRequest
+    const payload = {
+      ...farmer,
+      plots: farmPlots
+    };
+
+    const res = await axiosInstance.post('/farmers', payload);
+    
+    // Check for success status
+    if (res.data.status === 'success' || res.status === 200 || res.status === 201) {
       alert("Enrollment submitted successfully!");
-      router.push("/home");
+      router.push("/farmers"); // Redirect back to the registry list
     }
   } catch (err: any) {
-    errorMsg.value = err?.response?.data?.message ?? "Something went wrong. Please try again.";
+    if (err.response?.status === 422) {
+      const laravelErrors = err.response.data.errors;
+      const firstErrorKey = Object.keys(laravelErrors)[0];
+      errorMsg.value = `Validation Error: ${laravelErrors[firstErrorKey][0]}`;
+    } 
+    // ADD THIS: Reveal the exact database crash generated by the FarmerController
+    else if (err.response?.status === 500 && err.response?.data?.error) {
+      errorMsg.value = `SQL Crash: ${err.response.data.error}`;
+    } 
+    else {
+      errorMsg.value = err?.response?.data?.message ?? "Something went wrong. Please check your connection.";
+    }
+    
+    document.querySelector(".error-banner")?.scrollIntoView({ behavior: "smooth", block: "center" });
   } finally {
     isSubmitting.value = false;
   }

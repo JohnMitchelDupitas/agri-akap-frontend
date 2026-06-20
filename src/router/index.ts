@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import HomePage from '../views/HomePage.vue';
-import Registration_Form from '@/views/Registration_Form.vue';
-import LoginPage from '@/views/LoginPage.vue';
 import { useAuthStore } from '../stores/authStore';
 import FarmersListPage from '@/views/Farmers/FarmersListPage.vue';
 
@@ -17,14 +15,14 @@ const routes: Array<RouteRecordRaw> = [
     component: HomePage
   },
   {
-    path: '/register',
-    name: 'Registration_Form',
-    component: () => import('@/views/Farmers/Registration_Form.vue'),
-  },
-  {
     path: '/farmers',
     name: 'FarmersList',
     component: FarmersListPage
+  },
+  {
+    path: '/farmers/register',
+    name: 'FarmersRegister',
+    component: () => import('@/views/Farmers/Registration_Form.vue'),
   },
   {
     path: '/dashboard',
