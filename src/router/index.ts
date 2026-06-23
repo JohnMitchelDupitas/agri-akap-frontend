@@ -52,7 +52,18 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: true,
       role: 'technician' // Only technicians can access
     }
+  },
+  {
+    path: '/ScanQR',
+    name: 'ScanQR',
+    component: () => import('@/views/Scanner/ScannerPage.vue'),
+    meta: { 
+      requiresAuth: true,
+      role: 'technician' // Only technicians can access
+    }
+
   }
+  
 
 ]
 
