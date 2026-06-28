@@ -61,8 +61,13 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: true,
       role: 'technician' // Only technicians can access
     }
-
-  }
+  },
+  {
+  path: '/programs',
+  name: 'Programs',
+  component: () => import('@/views/Programs/ProgramsListPage.vue'),
+  meta: { requiresAuth: true }
+},
   
 
 ]
