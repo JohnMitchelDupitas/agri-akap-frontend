@@ -8,11 +8,7 @@
 
     <ion-content>
       <ion-list id="inbox-list">
-        <ion-menu-toggle
-          :auto-hide="false"
-          v-for="(p, i) in appPages"
-          :key="i"
-        >
+        <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
           <ion-item
             @click="selectedIndex = i"
             router-direction="root"
@@ -33,6 +29,7 @@
               {{ p.title }}
             </ion-label>
           </ion-item>
+
         </ion-menu-toggle>
       </ion-list>
     </ion-content>
@@ -41,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRoute } from "vue-router";
 import {
   IonContent,
   IonIcon,
@@ -52,6 +50,7 @@ import {
   IonTitle,
   IonToolbar,
   IonHeader,
+
 } from "@ionic/vue";
 
 import {
@@ -61,8 +60,11 @@ import {
   leafSharp,
   personOutline,
   personSharp,
+  idCardOutline,
+  megaphoneOutline,
 } from "ionicons/icons";
 
+const route = useRoute();
 const selectedIndex = ref(0);
 
 const appPages = [
@@ -84,18 +86,29 @@ const appPages = [
     iosIcon: personOutline,
     mdIcon: personSharp,
   },
+  {
+    title: "ID Issuance",
+    url: "/id-issuance",
+    iosIcon: idCardOutline,
+    mdIcon: idCardOutline,
+  },
+  {
+    title: "Broadcasts",
+    url: "/broadcasts",
+    iosIcon: megaphoneOutline,
+    mdIcon: megaphoneOutline,
+  }
 ];
 </script>
 
 <style scoped>
 @media (max-width: 700px) {
-
   ion-menu {
-  --width: 56px !important;
-  --max-width: 56px !important;
-  --border: none !important;       
-  border-right: none !important; 
-}
+    --width: 56px !important;
+    --max-width: 56px !important;
+    --border: none !important;
+    border-right: none !important;
+  }
   ion-header,
   ion-header ion-toolbar,
   ion-title {
