@@ -15,6 +15,9 @@ export interface PendingDistribution {
   program_name?: string;
   device_id: string;
   claimed_at: string;
+  geo_tag_lat?: number | null;
+  geo_tag_long?: number | null;
+  photo_proof_base64?: string;
   status: QueueStatus;
   error?: string;
   created_at: string;
@@ -28,7 +31,10 @@ export interface PendingAssessment {
   farm_plot_id: string;
   farmer_id?: string;
   farmer_name?: string;
-  calamity_name: string;
+  calamity_type: string;
+  calamity_name?: string;
+  crop_stage?: string | null;
+  area_destroyed_ha?: number | null;
   date_of_calamity: string;
   damage_percentage: number;
   estimated_value_lost?: number | null;
@@ -58,6 +64,23 @@ class AgriAkapDB extends Dexie {
   constructor() {
     super('agri-akap');
     this.version(1).stores({
+      pendingDistributions: 'client_id, status, created_at',
+      pendingAssessments: 'client_id, status, created_at',
+      cachedPrograms: 'id, cached_at',
+      cachedFarmers: 'id, cached_at',
+      cachedFarmPlots: 'id, cached_at',
+    });
+    // v2 adds geo-tag + photo voucher fields to queued releases. The indexes
+    // are unchanged (new fields are non-indexed), so no migration fn needed.
+    this.version(2).stores({
+      pendingDistributions: 'client_id, status, created_at',
+      pendingAssessments: 'client_id, status, created_at',
+      cachedPrograms: 'id, cached_at',
+      cachedFarmers: 'id, cached_at',
+      cachedFarmPlots: 'id, cached_at',
+    });
+    // v3 adds PCIC fields to queued assessments (calamity_type, crop_stage, area_destroyed_ha).
+    this.version(3).stores({
       pendingDistributions: 'client_id, status, created_at',
       pendingAssessments: 'client_id, status, created_at',
       cachedPrograms: 'id, cached_at',

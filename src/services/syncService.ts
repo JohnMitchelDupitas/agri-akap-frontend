@@ -75,6 +75,9 @@ export async function queueDistribution(input: {
   farmer_name?: string;
   program_id: string;
   program_name?: string;
+  geo_tag_lat?: number | null;
+  geo_tag_long?: number | null;
+  photo_proof_base64?: string;
 }): Promise<PendingDistribution> {
   const record: PendingDistribution = {
     client_id: newUuid(),
@@ -82,6 +85,9 @@ export async function queueDistribution(input: {
     farmer_name: input.farmer_name,
     program_id: input.program_id,
     program_name: input.program_name,
+    geo_tag_lat: input.geo_tag_lat ?? null,
+    geo_tag_long: input.geo_tag_long ?? null,
+    photo_proof_base64: input.photo_proof_base64,
     device_id: getDeviceId(),
     claimed_at: new Date().toISOString(),
     status: 'pending',
@@ -148,12 +154,18 @@ export async function flushQueue(): Promise<{ synced: number; failed: number }> 
         program_id: d.program_id,
         device_id: d.device_id,
         claimed_at: d.claimed_at,
+        geo_tag_lat: d.geo_tag_lat,
+        geo_tag_long: d.geo_tag_long,
+        photo_proof_base64: d.photo_proof_base64,
       })),
       assessments: assessments.map((a) => ({
         id: a.client_id,
         farm_plot_id: a.farm_plot_id,
         farmer_id: a.farmer_id,
+        calamity_type: a.calamity_type,
         calamity_name: a.calamity_name,
+        crop_stage: a.crop_stage,
+        area_destroyed_ha: a.area_destroyed_ha,
         date_of_calamity: a.date_of_calamity,
         damage_percentage: a.damage_percentage,
         estimated_value_lost: a.estimated_value_lost,

@@ -64,7 +64,7 @@
           <ion-card class="form-card">
             <ion-card-content>
               <ion-item class="custom-input">
-                <ion-select v-model="form.farm_plot_id" label="Affected Farm Plot *" label-placement="floating">
+                <ion-select v-model="form.farm_plot_id" label="Affected Farm Plot *" label-placement="floating" @ionChange="onPlotChange">
                   <ion-select-option v-for="plot in plots" :key="plot.id" :value="plot.id">
                     {{ plot.commodity }} - {{ plot.size_ha }} ha ({{ plot.location_brgy }})
                   </ion-select-option>
@@ -72,7 +72,28 @@
               </ion-item>
 
               <ion-item class="custom-input">
-                <ion-input v-model="form.calamity_name" label="Calamity Name *" label-placement="floating" placeholder="e.g., Typhoon Ompong"></ion-input>
+                <ion-select v-model="form.calamity_type" label="Calamity Type *" label-placement="floating">
+                  <ion-select-option value="Typhoon">Typhoon</ion-select-option>
+                  <ion-select-option value="Flood">Flood</ion-select-option>
+                  <ion-select-option value="Drought">Drought</ion-select-option>
+                  <ion-select-option value="Pest Outbreak">Pest Outbreak</ion-select-option>
+                  <ion-select-option value="Hail">Hail</ion-select-option>
+                  <ion-select-option value="Other">Other</ion-select-option>
+                </ion-select>
+              </ion-item>
+
+              <ion-item class="custom-input">
+                <ion-input v-model="form.calamity_name" label="Calamity Detail" label-placement="floating" placeholder="e.g., Typhoon Egay"></ion-input>
+              </ion-item>
+
+              <ion-item class="custom-input">
+                <ion-select v-model="form.crop_stage" label="Crop Stage" label-placement="floating" placeholder="Select stage">
+                  <ion-select-option value="Seedling">Seedling</ion-select-option>
+                  <ion-select-option value="Vegetative">Vegetative</ion-select-option>
+                  <ion-select-option value="Reproductive">Reproductive</ion-select-option>
+                  <ion-select-option value="Maturity">Maturity</ion-select-option>
+                  <ion-select-option value="Harvested">Harvested</ion-select-option>
+                </ion-select>
               </ion-item>
 
               <ion-item class="custom-input">
@@ -87,10 +108,14 @@
                 </ion-col>
                 <ion-col size="6">
                   <ion-item class="custom-input">
-                    <ion-input type="number" v-model="form.estimated_value_lost" label="Est. Loss (PHP)" label-placement="floating" placeholder="0.00"></ion-input>
+                    <ion-input type="number" v-model="form.area_destroyed_ha" label="Area Destroyed (ha) *" label-placement="floating" :max="selectedPlotSize" placeholder="0.00"></ion-input>
                   </ion-item>
                 </ion-col>
               </ion-row>
+
+              <ion-item class="custom-input">
+                <ion-input type="number" v-model="form.estimated_value_lost" label="Est. Loss (PHP)" label-placement="floating" placeholder="0.00"></ion-input>
+              </ion-item>
 
               <div class="evidence-section mt-4">
                 <h3 class="section-title">Geotagged Evidence</h3>
@@ -98,6 +123,8 @@
                 <div v-if="photoPreview" class="photo-preview-box mb-3">
                   <img :src="photoPreview" alt="Damage Evidence" />
                   <div class="gps-watermark" v-if="form.latitude">
+                    {{ form.calamity_type || 'CALAMITY' }}<br>
+                    {{ form.crop_stage || 'Stage N/A' }}<br>
                     LAT: {{ form.latitude.toFixed(5) }}<br>
                     LNG: {{ form.longitude.toFixed(5) }}
                   </div>
@@ -114,7 +141,7 @@
                 color="danger"
                 class="mt-4"
                 @click="submitAssessment"
-                :disabled="isSubmitting || !photoPreview || !form.farm_plot_id"
+                :disabled="isSubmitting || !photoPreview || !form.farm_plot_id || !form.calamity_type || !form.area_destroyed_ha"
               >
                 <ion-icon slot="start" :icon="cloudUploadOutline"></ion-icon>
                 {{ submitLabel }}
@@ -159,7 +186,10 @@ const photoPreview = ref<string | null>(null);
 
 const form = ref({
   farm_plot_id: '',
+  calamity_type: '',
   calamity_name: '',
+  crop_stage: '',
+  area_destroyed_ha: null as number | null,
   date_of_calamity: new Date().toISOString().split('T')[0],
   damage_percentage: null as number | null,
   estimated_value_lost: null as number | null,
@@ -168,10 +198,22 @@ const form = ref({
   photo_base64: '',
 });
 
-const submitLabel = computed(() => {
-  if (isSubmitting.value) return 'Saving...';
-  return syncStore.online ? 'Submit Official Report' : 'Save Offline';
+const selectedPlotSize = computed(() => {
+  const plot = plots.value.find(p => p.id === form.value.farm_plot_id);
+  return plot?.size_ha ?? null;
 });
+
+const submitLabel = computed(() => {
+  if (isSubmitting.value) return 'Submitting...';
+  return syncStore.online ? 'Submit Notice of Claim' : 'Save Notice Offline';
+});
+
+const onPlotChange = () => {
+  const plot = plots.value.find(p => p.id === form.value.farm_plot_id);
+  if (plot?.size_ha && !form.value.area_destroyed_ha) {
+    form.value.area_destroyed_ha = Number(plot.size_ha);
+  }
+};
 
 const toast = async (message: string, color = 'primary') => {
   const t = await toastController.create({ message, duration: 2500, color, position: 'top' });
@@ -228,10 +270,14 @@ const resetFarmer = () => {
 
 const captureEvidence = async () => {
   try {
-    const coordinates = await Geolocation.getCurrentPosition();
+    const coordinates = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
     form.value.latitude = coordinates.coords.latitude;
     form.value.longitude = coordinates.coords.longitude;
+  } catch {
+    await toast('GPS unavailable. Photo will still be captured but coordinates may be missing.', 'warning');
+  }
 
+  try {
     const image = await Camera.getPhoto({
       quality: 70,
       allowEditing: false,
@@ -241,14 +287,26 @@ const captureEvidence = async () => {
 
     photoPreview.value = `data:image/jpeg;base64,${image.base64String}`;
     form.value.photo_base64 = `data:image/jpeg;base64,${image.base64String}`;
-  } catch (error) {
-    await toast('Hardware access failed. Ensure GPS and Camera permissions are granted.', 'danger');
+  } catch {
+    await toast('Camera access failed. A geotagged photo is required.', 'danger');
   }
 };
 
 const submitAssessment = async () => {
+  if (!form.value.calamity_type) {
+    await toast('Select a calamity type before submitting.', 'danger');
+    return;
+  }
+  if (!form.value.area_destroyed_ha || Number(form.value.area_destroyed_ha) <= 0) {
+    await toast('Enter the area destroyed in hectares.', 'danger');
+    return;
+  }
+  if (selectedPlotSize.value && Number(form.value.area_destroyed_ha) > Number(selectedPlotSize.value)) {
+    await toast(`Area destroyed cannot exceed the plot size (${selectedPlotSize.value} ha).`, 'danger');
+    return;
+  }
   if (!form.value.photo_base64) {
-    await toast('A geotagged photo is strictly required for auditing.', 'danger');
+    await toast('A geotagged photo is strictly required for PCIC auditing.', 'danger');
     return;
   }
 
@@ -258,7 +316,10 @@ const submitAssessment = async () => {
     farm_plot_id: form.value.farm_plot_id,
     farmer_id: farmer.value?.id,
     farmer_name: `${farmer.value?.first_name ?? ''} ${farmer.value?.surname ?? ''}`.trim(),
-    calamity_name: form.value.calamity_name,
+    calamity_type: form.value.calamity_type,
+    calamity_name: form.value.calamity_name || form.value.calamity_type,
+    crop_stage: form.value.crop_stage || null,
+    area_destroyed_ha: Number(form.value.area_destroyed_ha),
     date_of_calamity: form.value.date_of_calamity,
     damage_percentage: Number(form.value.damage_percentage),
     estimated_value_lost: form.value.estimated_value_lost != null ? Number(form.value.estimated_value_lost) : null,
@@ -270,14 +331,17 @@ const submitAssessment = async () => {
   try {
     if (isOnline()) {
       const res = await apiClient.post('/damage-assessments', payload);
-      await toast(res.data.message || 'Assessment filed.', 'success');
+      await toast(res.data.message || 'Notice of claim filed.', 'success');
     } else {
       await queueAssessment(payload);
       await syncStore.refreshCount();
-      await toast('Saved offline. It will upload automatically when reconnected.', 'warning');
+      await toast('Notice saved offline. It will sync when reconnected.', 'warning');
     }
     resetFarmer();
+    form.value.calamity_type = '';
     form.value.calamity_name = '';
+    form.value.crop_stage = '';
+    form.value.area_destroyed_ha = null;
     form.value.damage_percentage = null;
     form.value.estimated_value_lost = null;
   } catch (error: any) {

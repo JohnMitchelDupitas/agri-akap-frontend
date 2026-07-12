@@ -85,41 +85,12 @@
         </div>
       </div>
 
-      <!-- STATE 2: RESULT -->
+      <!-- STATE 2: REJECTION (successful verifies route to the Release view) -->
       <div v-if="scanResult" class="result-container animation-fade-in">
-
-        <ion-card v-if="scanResult.status === 'success'" :color="scanResult.offline ? 'warning' : 'success'">
-          <ion-card-header>
-            <ion-icon
-              :icon="scanResult.offline ? cloudOfflineOutline : checkmarkCircleOutline"
-              class="result-icon"
-            ></ion-icon>
-            <ion-card-title class="text-white">
-              {{ scanResult.offline ? 'Queued Offline' : 'Claim Approved' }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="text-white">
-            <template v-if="scanResult.offline">
-              <p>This claim is saved on your device and will sync automatically when reconnected. Eligibility will be verified on upload.</p>
-            </template>
-            <template v-else>
-              <h2 class="farmer-name-result">{{ scanResult.data?.farmer_name }}</h2>
-              <div class="detail-row-r"><span>Farm Size:</span><strong>{{ scanResult.data?.total_farm_size }} ha</strong></div>
-              <div class="detail-row-r"><span>Eligible Size:</span><strong>{{ scanResult.data?.eligible_size_capped }} ha</strong></div>
-              <div class="dispense-box">
-                <span class="dispense-label">DISPENSE NOW:</span>
-                <span class="dispense-qty">{{ scanResult.data?.quantity_dispensed }}</span>
-                <span class="dispense-unit">{{ selectedProgram?.unit_of_measurement }}</span>
-              </div>
-              <p class="remaining-note">Inventory Remaining: <strong>{{ scanResult.data?.inventory_remaining }}</strong></p>
-            </template>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card v-else color="danger">
+        <ion-card color="danger">
           <ion-card-header>
             <ion-icon :icon="warningOutline" class="result-icon"></ion-icon>
-            <ion-card-title class="text-white">Claim Rejected</ion-card-title>
+            <ion-card-title class="text-white">Verification Failed</ion-card-title>
           </ion-card-header>
           <ion-card-content class="text-white">
             <p class="error-msg">{{ scanResult.message }}</p>
@@ -148,15 +119,19 @@ import {
   toastController,
 } from '@ionic/vue';
 import {
-  qrCodeOutline, checkmarkCircleOutline, warningOutline,
+  qrCodeOutline, warningOutline,
   cloudDoneOutline, cloudOfflineOutline,
 } from 'ionicons/icons';
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
+import { useRouter } from 'vue-router';
 import apiClient from '@/utils/axios';
 import { useSyncStore } from '@/stores/syncStore';
-import { getPrograms, isOnline, queueDistribution } from '@/services/syncService';
+import { useDistributionStore } from '@/stores/distributionStore';
+import { getPrograms, isOnline } from '@/services/syncService';
 
+const router = useRouter();
 const syncStore = useSyncStore();
+const distributionStore = useDistributionStore();
 const selectedProgramId = ref('');
 const scanResult = ref<any>(null);
 const programs = ref<any[]>([]);
@@ -190,14 +165,19 @@ const startScan = async () => {
     }
     const { barcodes } = await BarcodeScanner.scan();
     if (barcodes.length > 0 && barcodes[0].rawValue) {
-      await processClaim(barcodes[0].rawValue);
+      await verifyFarmer(barcodes[0].rawValue);
     }
   } catch {
     await showToast('Scanner failed to start. Check camera permissions in device settings.', 'danger');
   }
 };
 
-const processClaim = async (farmerUuid: string) => {
+/**
+ * No-write eligibility check. On success, stash the allocation preview and
+ * route to the Release view where the technician captures photo + GPS.
+ * Offline: skip verify and carry minimal context (verified on sync).
+ */
+const verifyFarmer = async (farmerUuid: string) => {
   const uuid = farmerUuid.trim();
   if (!uuid) {
     scanResult.value = { status: 'error', message: 'No Farmer ID detected. Please scan again.' };
@@ -210,24 +190,63 @@ const processClaim = async (farmerUuid: string) => {
 
   const program = selectedProgram.value;
 
+  // OFFLINE: cannot verify against the server. Carry minimal context and let
+  // the Release view queue the claim; eligibility is enforced on sync.
   if (!isOnline()) {
-    await queueDistribution({ farmer_id: uuid, program_id: selectedProgramId.value, program_name: program?.name });
-    await syncStore.refreshCount();
-    scanResult.value = { status: 'success', offline: true };
+    distributionStore.setContext({
+      farmer_id: uuid,
+      program_id: selectedProgramId.value,
+      farmer_name: '',
+      item_released: program?.name ?? '',
+      unit: program?.unit_of_measurement ?? '',
+      total_farm_size: 0,
+      eligible_size: 0,
+      quantity: 0,
+      inventory_remaining: program?.remaining_quantity ?? 0,
+      offline: true,
+    });
+    router.push('/tech/release');
     return;
   }
 
   try {
-    const response = await apiClient.post('/distributions/claim', {
+    const response = await apiClient.post('/distributions/verify', {
       farmer_id: uuid,
       program_id: selectedProgramId.value,
     });
-    scanResult.value = response.data;
+    const data = response.data?.data ?? {};
+    distributionStore.setContext({
+      farmer_id: data.farmer_id,
+      program_id: data.program_id,
+      farmer_name: data.farmer_name,
+      mobile_number: data.mobile_number,
+      item_released: data.item_released,
+      unit: data.unit,
+      total_farm_size: data.total_farm_size,
+      eligible_size: data.eligible_size,
+      quantity: data.quantity,
+      inventory_remaining: data.inventory_remaining,
+      plot_lat: data.plot_lat,
+      plot_long: data.plot_long,
+      offline: false,
+    });
+    router.push('/tech/release');
   } catch (err: any) {
     if (!err.response) {
-      await queueDistribution({ farmer_id: uuid, program_id: selectedProgramId.value, program_name: program?.name });
-      await syncStore.refreshCount();
-      scanResult.value = { status: 'success', offline: true };
+      // Network dropped mid-request: fall back to the offline release path.
+      distributionStore.setContext({
+        farmer_id: uuid,
+        program_id: selectedProgramId.value,
+        farmer_name: '',
+        item_released: program?.name ?? '',
+        unit: program?.unit_of_measurement ?? '',
+        total_farm_size: 0,
+        eligible_size: 0,
+        quantity: 0,
+        inventory_remaining: program?.remaining_quantity ?? 0,
+        offline: true,
+      });
+      router.push('/tech/release');
       return;
     }
     scanResult.value = err.response?.data ?? { status: 'error', message: 'Network error. Could not reach verification server.' };

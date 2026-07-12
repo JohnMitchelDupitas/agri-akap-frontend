@@ -61,9 +61,9 @@ import {
 } from "@ionic/vue";
 import {
   homeOutline, homeSharp, leafOutline, leafSharp, personOutline, personSharp,
-  idCardOutline, megaphoneOutline, warningOutline,
-  cubeOutline, shieldCheckmarkOutline, logOutOutline, mapOutline, mapSharp,
-  analyticsOutline, analyticsSharp, documentTextOutline,
+  idCardOutline, megaphoneOutline, warningOutline, documentTextOutline, umbrellaOutline,
+  cubeOutline, fileTrayStackedOutline, shieldCheckmarkOutline, logOutOutline, mapOutline, mapSharp,
+  analyticsOutline, analyticsSharp,
 } from "ionicons/icons";
 import { useAuthStore } from "@/stores/authStore";
 import { useSyncStore } from "@/stores/syncStore";
@@ -86,10 +86,12 @@ const appPages: NavPage[] = [
   { title: "Farmer Registry", url: "/admin/farmers", iosIcon: personOutline, mdIcon: personSharp },
   { title: "ID Issuance", url: "/admin/id-issuance", iosIcon: idCardOutline, mdIcon: idCardOutline },
   { title: "Inventory & Programs", url: "/admin/programs", iosIcon: cubeOutline, mdIcon: cubeOutline },
+  { title: "Stock Management", url: "/admin/inventory", iosIcon: fileTrayStackedOutline, mdIcon: fileTrayStackedOutline },
   { title: "SMS Broadcast", url: "/admin/broadcasts", iosIcon: megaphoneOutline, mdIcon: megaphoneOutline },
   { title: "Agricultural Intelligence", url: "/admin/intelligence", iosIcon: leafOutline, mdIcon: leafSharp },
   { title: "GIS Map", url: "/admin/map", iosIcon: mapOutline, mdIcon: mapSharp },
   { title: "Damage Review", url: "/admin/damage-review", iosIcon: shieldCheckmarkOutline, mdIcon: shieldCheckmarkOutline },
+  { title: "PCIC Claims & Insurance", url: "/admin/pcic-claims", iosIcon: umbrellaOutline, mdIcon: umbrellaOutline },
   { title: "Statutory Reports", url: "/admin/reports", iosIcon: documentTextOutline, mdIcon: documentTextOutline },
 ];
 

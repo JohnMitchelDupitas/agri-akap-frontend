@@ -46,7 +46,10 @@
 
                     <ion-item v-for="pest in pests" :key="pest.id">
                       <ion-label>
-                        <h2 class="pest-name">{{ pest.pest_name }}</h2>
+                        <div class="pest-title-row">
+                          <h2 class="pest-name">{{ pest.pest_name }}</h2>
+                          <ion-badge v-if="isThreatVector(pest)" color="danger" class="vector-badge">THREAT VECTOR</ion-badge>
+                        </div>
                         <p class="pest-sub">
                           {{ pest.farm_plot?.location_brgy }} · {{ pest.farm_plot?.commodity }}
                         </p>
@@ -56,6 +59,20 @@
                           · By: {{ pest.technician?.name ?? '—' }}
                         </p>
                         <p v-if="pest.notes" class="pest-notes">{{ pest.notes }}</p>
+                        <p v-if="pest.recommended_intervention" class="pest-intervention">
+                          <ion-icon :icon="medkitOutline"></ion-icon>
+                          {{ pest.recommended_intervention }}
+                        </p>
+                        <ion-button
+                          v-if="isThreatVector(pest) && pest.advisory"
+                          size="small"
+                          color="danger"
+                          class="advisory-btn"
+                          @click="advisoryPrompt(pest)"
+                        >
+                          <ion-icon slot="start" :icon="megaphoneOutline"></ion-icon>
+                          Send Community Advisory ({{ pest.advisory.recipient_count }})
+                        </ion-button>
                       </ion-label>
                       <div slot="end" class="pest-end">
                         <ion-badge :color="severityColor(pest.severity)" class="severity-badge">
@@ -117,6 +134,18 @@
       ]"
       @didDismiss="showResolveAlert = false"
     ></ion-alert>
+
+    <!-- Community Advisory Confirm Alert -->
+    <ion-alert
+      :is-open="showAdvisoryAlert"
+      header="Send Community Advisory"
+      :message="advisoryMessage"
+      :buttons="[
+        { text: 'Cancel', role: 'cancel', handler: () => { showAdvisoryAlert = false; } },
+        { text: 'Send SMS', cssClass: 'alert-btn-success', handler: () => confirmAdvisory() },
+      ]"
+      @didDismiss="showAdvisoryAlert = false"
+    ></ion-alert>
   </ion-page>
 </template>
 
@@ -128,7 +157,7 @@ import {
   IonList, IonItem, IonLabel, IonBadge, IonIcon, IonSpinner, IonAlert,
   toastController,
 } from '@ionic/vue';
-import { bugOutline, warningOutline, refreshOutline } from 'ionicons/icons';
+import { bugOutline, warningOutline, refreshOutline, medkitOutline, megaphoneOutline } from 'ionicons/icons';
 import axiosInstance from '@/utils/axios';
 
 const pests = ref<any[]>([]);
@@ -137,6 +166,12 @@ const pestSummary = ref<any>(null);
 const isLoading = ref(true);
 const showResolveAlert = ref(false);
 const selectedPest = ref<any>(null);
+
+const showAdvisoryAlert = ref(false);
+const advisoryMessage = ref('');
+const advisoryPest = ref<any>(null);
+
+const isThreatVector = (pest: any): boolean => pest.severity === 'High' || pest.severity === 'Critical';
 
 const fetchAll = async () => {
   isLoading.value = true;
@@ -167,6 +202,33 @@ const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('en-PH', { 
 const resolvePrompt = (pest: any) => {
   selectedPest.value = pest;
   showResolveAlert.value = true;
+};
+
+const advisoryPrompt = (pest: any) => {
+  advisoryPest.value = pest;
+  const adv = pest.advisory;
+  advisoryMessage.value =
+    `Target: ${adv.recipient_count} ${adv.target_commodity} farmer(s) in Brgy ${adv.target_barangay}.\n\n"${adv.message}"`;
+  showAdvisoryAlert.value = true;
+};
+
+const confirmAdvisory = async () => {
+  showAdvisoryAlert.value = false;
+  if (!advisoryPest.value) return;
+  try {
+    const res = await axiosInstance.post(`/intelligence/pest-outbreaks/${advisoryPest.value.id}/advisory`);
+    const t = await toastController.create({
+      message: res.data.message ?? 'Community advisory dispatched.',
+      duration: 3000, color: 'success', position: 'top',
+    });
+    await t.present();
+  } catch (err: any) {
+    const t = await toastController.create({
+      message: err.response?.data?.message ?? 'Failed to send advisory.',
+      duration: 3000, color: 'danger', position: 'top',
+    });
+    await t.present();
+  }
 };
 
 const updatePestStatus = async (status: 'Contained' | 'Resolved') => {
@@ -210,9 +272,18 @@ onMounted(() => fetchAll());
 .card-title-danger { font-weight: 800; color: #c0392b; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
 .card-title-warning { font-weight: 800; color: #d35400; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
 
+.pest-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pest-name { font-weight: 800; color: #0f172a; }
+.vector-badge { font-size: 0.62rem; letter-spacing: 0.5px; }
 .pest-sub { font-size: 0.82rem; color: #64748b; margin: 1px 0 0; }
 .pest-notes { font-size: 0.82rem; color: #475569; font-style: italic; margin: 4px 0 0; }
+.pest-intervention {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 0.82rem; color: #1a4731; font-weight: 600;
+  background: #e8f5e9; border-radius: 6px; padding: 8px 10px; margin: 6px 0 0;
+}
+.pest-intervention ion-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.advisory-btn { margin: 8px 0 0; --border-radius: 8px; text-transform: none; font-weight: 700; }
 .pest-end { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .severity-badge { font-size: 0.75rem; }
 

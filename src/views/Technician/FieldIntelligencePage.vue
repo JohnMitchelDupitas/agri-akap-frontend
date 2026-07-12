@@ -184,11 +184,23 @@
               <p v-if="pestErrors.farm_plot_id" class="field-error">{{ pestErrors.farm_plot_id }}</p>
 
               <ion-item class="custom-input" :class="{ 'input-error': pestErrors.pest_name }">
-                <ion-input
-                  v-model="pestForm.pest_name"
-                  label="Pest / Disease Name *"
+                <ion-select
+                  v-model="selectedThreat"
+                  label="Pest / Disease *"
                   label-placement="floating"
-                  placeholder="e.g. Fall Armyworm"
+                  placeholder="Select regional threat"
+                >
+                  <ion-select-option v-for="threat in regionalThreats" :key="threat" :value="threat">{{ threat }}</ion-select-option>
+                  <ion-select-option value="Other">Other (specify)</ion-select-option>
+                </ion-select>
+              </ion-item>
+
+              <ion-item v-if="selectedThreat === 'Other'" class="custom-input" :class="{ 'input-error': pestErrors.pest_name }">
+                <ion-input
+                  v-model="otherThreat"
+                  label="Specify Pest / Disease *"
+                  label-placement="floating"
+                  placeholder="e.g. Leaf Folder"
                 ></ion-input>
               </ion-item>
               <p v-if="pestErrors.pest_name" class="field-error">{{ pestErrors.pest_name }}</p>
@@ -246,12 +258,22 @@
         @didDismiss="showMonocultureAlert = false"
       ></ion-alert>
 
+      <!-- Pest Recommendation Alert -->
+      <ion-alert
+        :is-open="showPestAlert"
+        :header="pestAlertHigh ? '🚨 Threat Vector Flagged' : '✅ Outbreak Logged'"
+        sub-header="Recommended Intervention"
+        :message="pestRecommendation"
+        :buttons="['Acknowledge & Advise Farmer']"
+        @didDismiss="showPestAlert = false"
+      ></ion-alert>
+
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonSegment, IonSegmentButton, IonLabel, IonCard, IonCardContent, IonItem,
@@ -270,6 +292,18 @@ const geoStatus = ref('');
 
 const showMonocultureAlert = ref(false);
 const alertMessage = ref('');
+
+// Standardized regional threat labels (mirrors config/pest_guidelines.php).
+const regionalThreats = [
+  'Fall Armyworm', 'Rice Blast', 'Brown Planthopper', 'Rice Black Bug',
+  'Tungro Virus', 'Golden Apple Snail', 'Corn Borer', 'Rice Bug', 'Rodents',
+];
+const selectedThreat = ref('');
+const otherThreat = ref('');
+
+const showPestAlert = ref(false);
+const pestRecommendation = ref('');
+const pestAlertHigh = ref(false);
 
 const cropForm = reactive({
   farm_plot_id: '',
@@ -296,6 +330,11 @@ const pestForm = reactive({
 });
 
 const pestErrors = reactive({ farm_plot_id: '', pest_name: '' });
+
+// Resolve the effective pest name from the dropdown / "Other" free-text.
+const resolvedPestName = computed(() =>
+  selectedThreat.value === 'Other' ? otherThreat.value.trim() : selectedThreat.value
+);
 
 const showToast = async (msg: string, color: 'success' | 'danger' | 'warning' = 'success') => {
   const t = await toastController.create({ message: msg, duration: 3000, color, position: 'top' });
@@ -335,7 +374,7 @@ const validateCrop = (): boolean => {
 
 const validatePest = (): boolean => {
   pestErrors.farm_plot_id = pestForm.farm_plot_id ? '' : 'Please select an affected plot.';
-  pestErrors.pest_name = pestForm.pest_name.trim() ? '' : 'Pest or disease name is required.';
+  pestErrors.pest_name = resolvedPestName.value ? '' : 'Select a pest or specify one.';
   return !pestErrors.farm_plot_id && !pestErrors.pest_name;
 };
 
@@ -373,20 +412,41 @@ const submitPestReport = async () => {
   if (!validatePest()) return;
   isSubmitting.value = true;
 
+  pestForm.pest_name = resolvedPestName.value;
+
   const coords = await getGeolocation();
   if (coords) {
     pestForm.latitude = coords.latitude;
     pestForm.longitude = coords.longitude;
+  } else {
+    // Fall back to the selected parcel's stored coordinates.
+    const plot = plots.value.find(p => p.id === pestForm.farm_plot_id);
+    if (plot?.latitude && plot?.longitude) {
+      pestForm.latitude = Number(plot.latitude);
+      pestForm.longitude = Number(plot.longitude);
+      geoStatus.value = `📍 Using parcel coordinates: ${pestForm.latitude}, ${pestForm.longitude}`;
+    }
   }
 
   try {
-    await axiosInstance.post('/intelligence/pest-report', pestForm);
-    await showToast('Pest outbreak reported. MAO has been notified.', 'warning');
+    const res = await axiosInstance.post('/intelligence/pest-report', pestForm);
+
+    // Surface the prescriptive countermeasure so the technician can advise on-site.
+    if (res.data.recommended_intervention) {
+      pestRecommendation.value = res.data.recommended_intervention;
+      pestAlertHigh.value = !!res.data.high_priority;
+      showPestAlert.value = true;
+    } else {
+      await showToast('Pest outbreak reported. MAO has been notified.', 'warning');
+    }
+
     pestForm.farm_plot_id = '';
     pestForm.pest_name = '';
     pestForm.notes = '';
     pestForm.latitude = null;
     pestForm.longitude = null;
+    selectedThreat.value = '';
+    otherThreat.value = '';
     geoStatus.value = '';
   } catch (err: any) {
     await showToast(err.response?.data?.message ?? 'Failed to report pest.', 'danger');

@@ -41,11 +41,13 @@ const routes: Array<RouteRecordRaw> = [
       { path: "farmers/register", name: "FarmersRegister", component: () => import("@/views/Farmers/Registration_Form.vue") },
       { path: "id-issuance", name: "IdIssuance", component: () => import("@/views/Farmers/IdIssuancePage.vue") },
       { path: "programs", name: "Programs", component: () => import("@/views/Programs/ProgramsListPage.vue") },
+      { path: "inventory", name: "Inventory", component: () => import("@/views/Programs/InventoryPage.vue") },
       { path: "broadcasts", name: "Broadcasts", component: () => import("@/views/Communication/BroadcastCenterPage.vue") },
       { path: "intelligence", name: "Intelligence", component: () => import("@/views/Intelligence/IntelligenceDashboardPage.vue") },
       { path: "map", name: "Map", component: () => import("@/views/Map/MapPage.vue") },
       { path: "reports", name: "Reports", component: () => import("@/views/Reports/ExecutiveReportPage.vue") },
       { path: "damage-review", name: "DamageReview", component: () => import("@/views/Damage/DamageReviewPage.vue") },
+      { path: "pcic-claims", name: "PcicClaims", component: () => import("@/views/Damage/PcicClaimsPage.vue") },
     ],
   },
 
@@ -57,6 +59,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       { path: "", redirect: "/tech/scanner" },
       { path: "scanner", name: "Scan", component: () => import("@/views/Scanner/ScannerPage.vue") },
+      { path: "release", name: "Release", component: () => import("@/views/Scanner/ReleasePage.vue") },
       { path: "field", name: "FieldIntelligence", component: () => import("@/views/Technician/FieldIntelligencePage.vue") },
       { path: "damage", name: "DamageAssessment", component: () => import("@/views/Technician/DamageAssessmentPage.vue") },
       { path: "sync", name: "PendingSync", component: () => import("@/views/Sync/PendingSyncPage.vue") },
