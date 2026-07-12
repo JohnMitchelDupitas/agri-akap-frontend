@@ -1,35 +1,21 @@
 <template>
   <ion-app>
-    <template v-if="showShell">
-      <ion-split-pane
-        content-id="main-content"
-        when="xs"
-        class="responsive-split"
-      >
-        <app-sidebar />
-
-        <ion-router-outlet id="main-content" />
-      </ion-split-pane>
-    </template>
-
-    <template v-else>
-      <ion-router-outlet id="main-content" />
-    </template>
+    <ion-router-outlet />
   </ion-app>
 </template>
 
 <script setup lang="ts">
-import {
-  IonApp,
-  IonRouterOutlet,
-  IonSplitPane
-} from '@ionic/vue';
+import { IonApp, IonRouterOutlet } from '@ionic/vue';
+import { onMounted } from 'vue';
+import { useSyncStore } from '@/stores/syncStore';
+import { useAuthStore } from '@/stores/authStore';
 
-import AppSidebar from '@/components/AppSidebar.vue';
-import { useRoute } from 'vue-router';
-import { computed } from 'vue';
+const syncStore = useSyncStore();
+const authStore = useAuthStore();
 
-const route = useRoute();
-
-const showShell = computed(() => route.name !== 'Login' && route.name !== 'Registration_Form');
+onMounted(async () => {
+  syncStore.init();
+  // Validate cached token on every app start — catches deactivated/expired sessions.
+  await authStore.restoreSession();
+});
 </script>

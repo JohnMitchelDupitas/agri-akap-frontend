@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar class="rsbsa-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button default-href="/farmers" class="back-btn" />
+          <ion-back-button :default-href="farmersHome" class="back-btn" />
         </ion-buttons>
         <ion-title class="toolbar-title">RSBSA Enrollment Form</ion-title>
       </ion-toolbar>
@@ -16,7 +16,7 @@
             <div class="lh-seal">
               <div class="seal-outer"></div>
               <div class="seal-inner"></div>
-              <span class="seal-text">logo sana</span>
+              <img src="@/assets/images/mao-echague-logo.png" alt="MAO" style="width:36px;height:36px;object-fit:contain;z-index:1;" onerror="this.style.display='none'" />
             </div>
             <div class="lh-titles">
               <div class="lh-agency">REGISTRY SYSTEM FOR BASIC SECTORS IN AGRICULTURE</div>
@@ -24,10 +24,13 @@
             </div>
           </div>
           <div class="lh-right">
-            <div class="photo-placeholder">
-              <span>2x2</span>
-              <span>PHOTO</span>
-              <span>WITH NAME</span>
+            <div class="photo-capture-box" @click="capturePhoto">
+              <img v-if="photoPreview" :src="photoPreview" class="photo-preview-img" />
+              <template v-else>
+                <span style="font-size:1.5rem;color:var(--c-border)">📷</span>
+                <span class="photo-cap-lbl">2x2 PHOTO</span>
+                <span class="photo-cap-sub">Tap to capture</span>
+              </template>
             </div>
           </div>
         </div>
@@ -355,9 +358,23 @@
               <div class="radio-row wrap">
                 <label v-for="lv in livelihoodTypes" :key="lv"
                   class="radio-pill" :class="{ active: farmer.livelihood_type === lv }">
-                  <input type="radio" v-model="farmer.livelihood_type" :value="lv" class="r-hidden" />
+                  <input type="radio" v-model="farmer.livelihood_type" :value="lv" @change="onLivelihoodTypeChange" class="r-hidden" />
                   <span class="r-dot"></span> {{ lv }}
                 </label>
+              </div>
+            </div>
+          </div>
+
+          <!--  Livelihood sub-classification (DA RSBSA) -->
+          <div class="subsection" v-if="farmer.livelihood_type">
+            <div class="subsection-title">SPECIFIC LIVELIHOOD CLASSIFICATION</div>
+            <div class="subsection-body">
+              <div class="field-wrap">
+                <label class="flabel">CLASSIFICATION DETAIL</label>
+                <ion-select v-model="farmer.livelihood_detail" interface="popover" class="fselect"
+                  :placeholder="`Select ${farmer.livelihood_type} classification`">
+                  <ion-select-option v-for="d in livelihoodDetailOptions" :key="d" :value="d">{{ d }}</ion-select-option>
+                </ion-select>
               </div>
             </div>
           </div>
@@ -400,7 +417,7 @@
                     <ion-input v-model="plot.location_province" class="finput" />
                   </div>
                 </div>
-                <div class="fgrid g2 mt6">
+                <div class="fgrid g3 mt6">
                   <div class="field-wrap">
                     <label class="flabel">LATITUDE (GPS)</label>
                     <ion-input type="number" v-model="plot.latitude" class="finput" placeholder="e.g. 14.5995" />
@@ -409,7 +426,16 @@
                     <label class="flabel">LONGITUDE (GPS)</label>
                     <ion-input type="number" v-model="plot.longitude" class="finput" placeholder="e.g. 120.9842" />
                   </div>
+                  <div class="field-wrap">
+                    <label class="flabel">GEOREF ID / GPX ID</label>
+                    <ion-input v-model="plot.georef_id" class="finput" placeholder="e.g. GPX-ECH-0001" />
+                  </div>
                 </div>
+                <ion-button fill="outline" size="small" class="gps-btn mt6"
+                  :disabled="plot.locating" @click="useCurrentLocation(idx)">
+                  <span v-if="plot.locating">Locating…</span>
+                  <span v-else>📍 Use current location</span>
+                </ion-button>
               </div>
             </div>
 
@@ -445,21 +471,28 @@
 
             <!-- Land Owner -->
             <div class="subsection">
-              <div class="subsection-title">LAND OWNER INFORMATION</div>
+              <div class="subsection-title">
+                LAND OWNER INFORMATION
+                <span v-if="plot.ownership_type === 'Tenant'" class="tenant-flag">Required for Tenant</span>
+              </div>
               <div class="subsection-body">
                 <div class="fgrid g3">
                   <div class="field-wrap">
-                    <label class="flabel">LAND OWNER'S FIRST NAME</label>
+                    <label class="flabel" :class="{ req: plot.ownership_type === 'Tenant' }">LAND OWNER'S FIRST NAME</label>
                     <ion-input v-model="plot.land_owner_first_name" class="finput" />
                   </div>
                   <div class="field-wrap">
-                    <label class="flabel">LAND OWNER'S SURNAME</label>
+                    <label class="flabel" :class="{ req: plot.ownership_type === 'Tenant' }">LAND OWNER'S SURNAME</label>
                     <ion-input v-model="plot.land_owner_surname" class="finput" />
                   </div>
                   <div class="field-wrap">
                     <label class="flabel">LAND OWNER'S EXT. NAME</label>
                     <ion-input v-model="plot.land_owner_ext_name" class="finput" />
                   </div>
+                </div>
+                <div class="field-wrap mt6" v-if="plot.ownership_type === 'Tenant'">
+                  <label class="flabel req">LAND OWNER'S RSBSA NO.</label>
+                  <ion-input v-model="plot.land_owner_rsbsa_no" class="finput" placeholder="Landowner's RSBSA reference number" />
                 </div>
                 <div class="field-wrap mt6">
                   <label class="flabel req">PROOF OF OWNERSHIP / TENURIAL DOCUMENT</label>
@@ -527,7 +560,7 @@
 
         <!--  SUBMIT button-->
         <ion-button expand="block" class="submit-btn" :disabled="isSubmitting" @click="submitForm">
-          <span v-if="isSubmitting"> Submitting...................................................</span>
+          <span v-if="isSubmitting">Submitting...</span>
           <span v-else> SUBMIT ENROLLMENT FORM</span>
         </ion-button>
 
@@ -543,21 +576,55 @@
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonInput, IonSelect, IonSelectOption, IonButton, IonButtons,
-  IonBackButton, IonCheckbox, IonTextarea
+  IonBackButton, IonCheckbox, IonTextarea,
+  toastController,
 } from "@ionic/vue";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Geolocation } from "@capacitor/geolocation";
 
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, computed } from "vue";
 import axiosInstance from "@/utils/axios";
 import { useRouter } from "vue-router";
 // import AppNavbar from '@/components/AppNavbar.vue'; // Unused in this layout
 
 const router = useRouter();
 
+// Return to the farmer registry within the current environment (admin vs technician).
+const farmersHome = computed(() =>
+  router.currentRoute.value.path.startsWith("/tech") ? "/tech/farmers" : "/admin/farmers"
+);
+
 /* state  */
 const isSubmitting  = ref(false);
 const errorMsg      = ref("");
 const sameAddress   = ref(false);
 const computedAge   = ref<number | "">("");
+const photoPreview  = ref<string | null>(null);
+
+const showToast = async (msg: string, color: 'success' | 'danger' | 'warning' = 'success') => {
+  const toast = await toastController.create({
+    message: msg,
+    duration: 3000,
+    color,
+    position: 'top',
+  });
+  await toast.present();
+};
+
+const capturePhoto = async () => {
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: true,
+      resultType: CameraResultType.Base64,
+      source: CameraSource.Prompt,
+    });
+    photoPreview.value = `data:image/jpeg;base64,${photo.base64String}`;
+    (farmer as any).photo_base64 = photoPreview.value;
+  } catch {
+    // user cancelled
+  }
+};
 
 /* options  */
 const civilStatusOptions = ["Single", "Married", "Widow/er", "Legally Separated"];
@@ -573,6 +640,18 @@ const govIdTypes = [
 const livelihoodTypes = ["Farmer","Farm Worker","Fisher","Agri-Youth"];
 const ownershipTypes  = ["Registered Owner","Tenant","Lessee","Others"];
 const farmTypes       = ["Irrigated","Rainfed Upland","Rainfed Lowland","Urban/Peri-Urban"];
+
+// DA RSBSA livelihood sub-classifications, keyed by the broad livelihood type.
+const livelihoodDetailMap: Record<string, string[]> = {
+  "Farmer":      ["Rice", "Corn", "Other Crops", "Livestock", "Poultry"],
+  "Farm Worker": ["Land Preparation", "Planting/Transplanting", "Cultivation", "Harvesting"],
+  "Fisher":      ["Fish Capture", "Aquaculture", "Gleaning", "Processing", "Fish Vending"],
+  "Agri-Youth":  ["Agri-Youth", "Farming Household"],
+};
+const livelihoodDetailOptions = computed(
+  () => livelihoodDetailMap[farmer.livelihood_type] ?? []
+);
+const onLivelihoodTypeChange = () => { farmer.livelihood_detail = ""; };
 
 /* farmer details */
 const farmer = reactive({
@@ -628,6 +707,7 @@ const farmer = reactive({
   association_2: "", 
   association_3: "",
   livelihood_type: "",
+  livelihood_detail: "",
 });
 
 /* ── farm plots ── */
@@ -637,6 +717,8 @@ const createPlot = () => ({
   location_province: "",
   latitude: "" as string|number, 
   longitude: "" as string|number,
+  georef_id: "",
+  locating: false,
   total_parcel_area_ha: "" as string|number,
   is_ancestral_domain: false, 
   is_agrarian_reform_beneficiary: false,
@@ -644,6 +726,7 @@ const createPlot = () => ({
   land_owner_first_name: "", 
   land_owner_surname: "",
   land_owner_ext_name: "", 
+  land_owner_rsbsa_no: "",
   proof_of_ownership_document: "",
   commodity: "", 
   size_ha: "" as string|number,
@@ -657,6 +740,25 @@ const createPlot = () => ({
 const farmPlots = reactive([createPlot()]);
 const addPlot    = () => farmPlots.push(createPlot());
 const removePlot = (i: number) => farmPlots.splice(i, 1);
+
+/* Capture the device GPS fix into a plot's latitude/longitude. */
+const useCurrentLocation = async (i: number) => {
+  const plot = farmPlots[i];
+  plot.locating = true;
+  try {
+    const pos = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+    });
+    plot.latitude = Number(pos.coords.latitude.toFixed(6));
+    plot.longitude = Number(pos.coords.longitude.toFixed(6));
+    await showToast(`Location captured for Farm Plot ${i + 1}.`, 'success');
+  } catch {
+    await showToast('Unable to get GPS location. You may enter coordinates manually.', 'warning');
+  } finally {
+    plot.locating = false;
+  }
+};
 
 /* age compute */
 const computeAge = () => {
@@ -726,8 +828,17 @@ const validate = (): boolean => {
   for (let i = 0; i < farmPlots.length; i++) {
     const p = farmPlots[i], n = `Farm Plot ${i+1}`;
     if (!p.location_brgy.trim())               { errorMsg.value = `${n}: Barangay is required.`;             return false; }
+    if (!p.location_city.trim())               { errorMsg.value = `${n}: Municipality/City is required.`;    return false; }
+    if (!p.location_province.trim())           { errorMsg.value = `${n}: Province is required.`;             return false; }
+    if (p.latitude !== "" && (Number(p.latitude) < -90 || Number(p.latitude) > 90))       { errorMsg.value = `${n}: Latitude must be between -90 and 90.`;   return false; }
+    if (p.longitude !== "" && (Number(p.longitude) < -180 || Number(p.longitude) > 180))  { errorMsg.value = `${n}: Longitude must be between -180 and 180.`; return false; }
     if (!p.total_parcel_area_ha)               { errorMsg.value = `${n}: Total Parcel Area is required.`;    return false; }
     if (!p.ownership_type)                     { errorMsg.value = `${n}: Ownership Type is required.`;       return false; }
+    if (p.ownership_type === 'Tenant') {
+      if (!p.land_owner_first_name.trim())     { errorMsg.value = `${n}: Landowner first name is required for tenants.`; return false; }
+      if (!p.land_owner_surname.trim())        { errorMsg.value = `${n}: Landowner surname is required for tenants.`;    return false; }
+      if (!p.land_owner_rsbsa_no.trim())       { errorMsg.value = `${n}: Landowner RSBSA number is required for tenants.`; return false; }
+    }
     if (!p.proof_of_ownership_document.trim()) { errorMsg.value = `${n}: Proof of Ownership is required.`;   return false; }
     if (!p.commodity.trim())                   { errorMsg.value = `${n}: Commodity is required.`;            return false; }
     if (!p.size_ha)                            { errorMsg.value = `${n}: Farm Size (ha) is required.`;       return false; }
@@ -754,10 +865,9 @@ const submitForm = async () => {
 
     const res = await axiosInstance.post('/farmers', payload);
     
-    // Check for success status
     if (res.data.status === 'success' || res.status === 200 || res.status === 201) {
-      alert("Enrollment submitted successfully!");
-      router.push("/farmers"); // Redirect back to the registry list
+      await showToast('Farmer enrolled successfully!', 'success');
+      router.push(farmersHome.value);
     }
   } catch (err: any) {
     if (err.response?.status === 422) {
@@ -889,13 +999,18 @@ const submitForm = async () => {
 .copy-num sup { font-size: 12px; }
 .copy-lbl { font-size: 9px; letter-spacing: 1px; }
 
-.photo-placeholder {
-  width: 72px; height: 72px;
+.photo-capture-box {
+  width: 80px; height: 80px;
   border: 2px dashed var(--c-border);
+  border-radius: 4px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 700; text-align: center;
-  color: var(--c-text-soft); gap: 1px; border-radius: 2px;
+  cursor: pointer; overflow: hidden; gap: 2px;
+  transition: border-color 0.2s;
 }
+.photo-capture-box:hover { border-color: var(--c-green); }
+.photo-cap-lbl { font-size: 9px; font-weight: 800; color: var(--c-label); }
+.photo-cap-sub { font-size: 8px; color: var(--c-text-soft); }
+.photo-preview-img { width: 100%; height: 100%; object-fit: cover; }
 
 /* ═══════ TRANSACTION ROW ═══════ */
 .tx-row {
@@ -1125,6 +1240,25 @@ const submitForm = async () => {
   letter-spacing: .6px;
 }
 .del-plot-btn { --color: #ffb3ae; font-size: 12px; font-weight: 700; }
+
+.gps-btn {
+  --border-color: var(--c-green-mid);
+  --color: var(--c-green-mid);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: none;
+}
+.tenant-flag {
+  margin-left: 8px;
+  background: var(--c-gold);
+  color: var(--c-green);
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
 
 .add-plot-wrap { padding: 10px 12px 12px; }
 .add-plot-btn {

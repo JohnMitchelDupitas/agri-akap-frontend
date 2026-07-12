@@ -9,6 +9,16 @@
   </ion-header>
 </template>
 
+<script setup lang="ts">
+// Define 'title' as a string prop with an optional default value
+defineProps({
+  title: {
+    type: String,
+    default: 'Agri-Akap'
+  }
+});
+</script>
+
 <style scoped>
 @media (max-width: 700px) {
   .nav-title {

@@ -6,116 +6,131 @@
           <ion-menu-button></ion-menu-button>
         </ion-buttons>
         <ion-title>Subsidy Distribution</ion-title>
+        <ion-buttons slot="end">
+          <ion-chip :color="syncStore.online ? 'light' : 'warning'" style="--background:rgba(255,255,255,0.15);">
+            <ion-icon :icon="syncStore.online ? cloudDoneOutline : cloudOfflineOutline"></ion-icon>
+            <ion-label>{{ syncStore.online ? 'Online' : 'Offline' }}</ion-label>
+          </ion-chip>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding">
-      
-      <!-- 🔴 STATE 1: INITIAL SETUP & PROGRAM SELECTION -->
+    <ion-content class="scan-bg ion-padding">
+
+      <!-- STATE 1: PROGRAM SELECTION + SCAN -->
       <div v-if="!scanResult" class="setup-container">
-        <ion-card>
+
+        <!-- Program Selection -->
+        <ion-card class="program-card">
           <ion-card-header>
-            <ion-card-title>Step 1: Select Active Program</ion-card-title>
+            <ion-card-title class="step-label">Step 1 — Select Program</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <ion-item>
-              <ion-label>Active Program</ion-label>
-              <ion-select v-model="selectedProgramId" placeholder="Choose a campaign...">
-                <ion-spinner v-if="programStore.isLoading" name="crescent"></ion-spinner>
-                <ion-select-option 
-                  v-for="program in programStore.activePrograms()" 
-                  :key="program.id" 
-                  :value="program.id"
-                >
-                  {{ program.name }}
+            <ion-item class="program-select-item">
+              <ion-select
+                v-model="selectedProgramId"
+                placeholder="Choose an active campaign..."
+                @ionChange="onProgramChange"
+              >
+                <ion-select-option v-for="p in programs" :key="p.id" :value="p.id">
+                  {{ p.name }}
                 </ion-select-option>
-                <div v-if="!programStore.isLoading && programStore.activePrograms().length === 0" style="padding: 12px; color: red;">
-                  No active programs available
-                </div>
               </ion-select>
             </ion-item>
-            <div v-if="programStore.error" style="color: red; font-size: 0.9rem; margin-top: 0.5rem;">
-              {{ programStore.error }}
+
+            <!-- Selected program details -->
+            <div v-if="selectedProgram" class="program-details">
+              <div class="pd-row">
+                <span class="pd-label">Type</span>
+                <ion-badge color="primary">{{ selectedProgram.type }}</ion-badge>
+              </div>
+              <div class="pd-row">
+                <span class="pd-label">Inventory Remaining</span>
+                <strong>{{ selectedProgram.remaining_quantity?.toLocaleString() }} {{ selectedProgram.unit_of_measurement }}</strong>
+              </div>
+              <div class="pd-row">
+                <span class="pd-label">Allocation Rate</span>
+                <strong>{{ selectedProgram.per_hectare_allocation }} {{ selectedProgram.unit_of_measurement }}/ha</strong>
+              </div>
+              <div class="pd-row">
+                <span class="pd-label">Valid Until</span>
+                <strong>{{ selectedProgram.end_date }}</strong>
+              </div>
+              <ion-progress-bar
+                :value="(selectedProgram.remaining_quantity / selectedProgram.total_quantity) || 0"
+                :color="remainingPercent < 20 ? 'danger' : 'success'"
+              ></ion-progress-bar>
+              <p class="pd-pct">{{ remainingPercent }}% stock remaining</p>
+            </div>
+
+            <div v-if="!programs.length" class="no-programs">
+              No active programs available{{ !syncStore.online ? ' (offline cache empty)' : '' }}
             </div>
           </ion-card-content>
         </ion-card>
 
+        <!-- Scan Button -->
         <div class="action-wrapper">
-          <ion-button 
-            expand="block" 
-            size="large" 
-            class="scan-btn" 
-            :disabled="!selectedProgramId" 
+          <ion-button
+            expand="block"
+            size="large"
+            class="scan-btn"
+            :disabled="!selectedProgramId"
             @click="startScan"
           >
             <ion-icon slot="start" :icon="qrCodeOutline"></ion-icon>
-            TAP TO SCAN ID
+            TAP TO SCAN FARMER ID
           </ion-button>
-
-          <!-- 🔴 DEVELOPER TEST HACK (Remove before production) -->
-      <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed #ccc;">
-            <p style="font-size: 0.8rem; color: gray; margin-bottom: 0.5rem;">DEVELOPER MODE: BYPASS CAMERA</p>
-            
-            <input 
-              type="text" 
-              v-model="testFarmerUuid" 
-              placeholder="Paste Farmer UUID here..." 
-              style="width: 100%; padding: 12px; border: 1px solid #999; border-radius: 6px; margin-bottom: 10px; font-size: 16px; color: black; background: white;"
-            />
-
-            <ion-button expand="block" color="medium" @click="processClaim(testFarmerUuid)">
-              Simulate QR Scan
-            </ion-button>
-          </div>
-          <!-- 🔴 END HACK -->
-
-
-          <p class="helper-text" v-if="!selectedProgramId">Please select a program first.</p>
+          <p class="helper-text" v-if="!selectedProgramId">Select a program to enable scanning.</p>
         </div>
       </div>
 
-      <!-- 🔴 STATE 2: THE VERIFICATION RESULT -->
+      <!-- STATE 2: RESULT -->
       <div v-if="scanResult" class="result-container animation-fade-in">
-        
-        <!-- SUCCESS CARD -->
-        <ion-card v-if="scanResult.status === 'success'" color="success">
+
+        <ion-card v-if="scanResult.status === 'success'" :color="scanResult.offline ? 'warning' : 'success'">
           <ion-card-header>
-            <ion-icon :icon="checkmarkCircle" class="result-icon"></ion-icon>
-            <ion-card-title class="text-white">Verification Passed</ion-card-title>
+            <ion-icon
+              :icon="scanResult.offline ? cloudOfflineOutline : checkmarkCircleOutline"
+              class="result-icon"
+            ></ion-icon>
+            <ion-card-title class="text-white">
+              {{ scanResult.offline ? 'Queued Offline' : 'Claim Approved' }}
+            </ion-card-title>
           </ion-card-header>
           <ion-card-content class="text-white">
-            <h2 style="font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">
-              {{ scanResult.data.farmer_name }}
-            </h2>
-            <p><strong>Total Farm Size:</strong> {{ scanResult.data.total_farm_size }}</p>
-            <p><strong>Eligible Size:</strong> {{ scanResult.data.eligible_size_capped }}</p>
-            
-            <div class="dispense-box">
-              <span>DISPENSE NOW:</span>
-              <span class="dispense-qty">{{ scanResult.data.quantity_dispensed }}</span>
-            </div>
-            
-            <p style="font-size: 0.8rem; margin-top: 1rem;">
-              Inventory Remaining: {{ scanResult.data.inventory_remaining }}
-            </p>
+            <template v-if="scanResult.offline">
+              <p>This claim is saved on your device and will sync automatically when reconnected. Eligibility will be verified on upload.</p>
+            </template>
+            <template v-else>
+              <h2 class="farmer-name-result">{{ scanResult.data?.farmer_name }}</h2>
+              <div class="detail-row-r"><span>Farm Size:</span><strong>{{ scanResult.data?.total_farm_size }} ha</strong></div>
+              <div class="detail-row-r"><span>Eligible Size:</span><strong>{{ scanResult.data?.eligible_size_capped }} ha</strong></div>
+              <div class="dispense-box">
+                <span class="dispense-label">DISPENSE NOW:</span>
+                <span class="dispense-qty">{{ scanResult.data?.quantity_dispensed }}</span>
+                <span class="dispense-unit">{{ selectedProgram?.unit_of_measurement }}</span>
+              </div>
+              <p class="remaining-note">Inventory Remaining: <strong>{{ scanResult.data?.inventory_remaining }}</strong></p>
+            </template>
           </ion-card-content>
         </ion-card>
 
-        <!-- FRAUD / ERROR CARD -->
         <ion-card v-else color="danger">
           <ion-card-header>
             <ion-icon :icon="warningOutline" class="result-icon"></ion-icon>
             <ion-card-title class="text-white">Claim Rejected</ion-card-title>
           </ion-card-header>
           <ion-card-content class="text-white">
-            <p class="error-msg"><strong>{{ scanResult.message }}</strong></p>
-            <p v-if="scanResult.data?.claimed_at" style="margin-top: 1rem;">
-              <em>Already claimed on: {{ scanResult.data.claimed_at }}</em>
+            <p class="error-msg">{{ scanResult.message }}</p>
+            <p v-if="scanResult.data?.claimed_at" class="claimed-at">
+              Already claimed on: {{ new Date(scanResult.data.claimed_at).toLocaleString() }}
             </p>
           </ion-card-content>
         </ion-card>
 
         <ion-button expand="block" fill="outline" class="mt-4" @click="resetScanner">
+          <ion-icon slot="start" :icon="qrCodeOutline"></ion-icon>
           Scan Next Farmer
         </ion-button>
       </div>
@@ -125,90 +140,97 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { 
+import { ref, computed, onMounted } from 'vue';
+import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonSelect, IonSelectOption,
-  IonButton, IonIcon, IonItem, IonInput, IonLabel, IonSpinner
+  IonButton, IonIcon, IonItem, IonChip, IonLabel, IonBadge, IonProgressBar,
+  toastController,
 } from '@ionic/vue';
-import { qrCodeOutline, checkmarkCircle, warningOutline } from 'ionicons/icons';
-
-// 1. Import the ML Kit Plugin
+import {
+  qrCodeOutline, checkmarkCircleOutline, warningOutline,
+  cloudDoneOutline, cloudOfflineOutline,
+} from 'ionicons/icons';
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
-import axiosInstance from '@/utils/axios';
-import { useProgramStore } from '@/stores/programStore';
+import apiClient from '@/utils/axios';
+import { useSyncStore } from '@/stores/syncStore';
+import { getPrograms, isOnline, queueDistribution } from '@/services/syncService';
 
+const syncStore = useSyncStore();
 const selectedProgramId = ref('');
 const scanResult = ref<any>(null);
-const testFarmerUuid = ref('');
+const programs = ref<any[]>([]);
 
-const programStore = useProgramStore();
+const selectedProgram = computed(() =>
+  programs.value.find(p => p.id === selectedProgramId.value) ?? null
+);
 
-// Fetch programs on component mount
-onMounted(() => {
-  programStore.fetchPrograms();
+const remainingPercent = computed(() => {
+  if (!selectedProgram.value?.total_quantity) return 0;
+  return Math.round((selectedProgram.value.remaining_quantity / selectedProgram.value.total_quantity) * 100);
 });
 
-// --- ML KIT SCANNER LOGIC ---
+const onProgramChange = () => { scanResult.value = null; };
+
+onMounted(async () => {
+  programs.value = await getPrograms();
+});
+
+const showToast = async (msg: string, color: 'warning' | 'danger' = 'warning') => {
+  const t = await toastController.create({ message: msg, duration: 3000, color, position: 'top' });
+  await t.present();
+};
 
 const startScan = async () => {
   try {
-    // 1. Request Camera Permissions using ML Kit
     const { camera } = await BarcodeScanner.requestPermissions();
     if (camera !== 'granted' && camera !== 'limited') {
-      alert("Camera permission is required to scan IDs.");
+      await showToast('Camera permission is required to scan farmer IDs.', 'warning');
       return;
     }
-
-    // 2. Launch the native ML Kit Scanner overlay
     const { barcodes } = await BarcodeScanner.scan();
-
-    // 3. Process the scanned QR code if one was found
     if (barcodes.length > 0 && barcodes[0].rawValue) {
-      const scannedFarmerUuid = barcodes[0].rawValue;
-      await processClaim(scannedFarmerUuid);
+      await processClaim(barcodes[0].rawValue);
     }
-  } catch (error) {
-    console.error("Scanner Error:", error);
-    alert("Scanner failed to start. Please check camera permissions.");
+  } catch {
+    await showToast('Scanner failed to start. Check camera permissions in device settings.', 'danger');
   }
 };
 
-// --- API CLAIMING LOGIC ---
-
 const processClaim = async (farmerUuid: string) => {
+  const uuid = farmerUuid.trim();
+  if (!uuid) {
+    scanResult.value = { status: 'error', message: 'No Farmer ID detected. Please scan again.' };
+    return;
+  }
+  if (!selectedProgramId.value) {
+    scanResult.value = { status: 'error', message: 'Please select an active program first.' };
+    return;
+  }
+
+  const program = selectedProgram.value;
+
+  if (!isOnline()) {
+    await queueDistribution({ farmer_id: uuid, program_id: selectedProgramId.value, program_name: program?.name });
+    await syncStore.refreshCount();
+    scanResult.value = { status: 'success', offline: true };
+    return;
+  }
+
   try {
-    // 🔴 1. FRONTEND GUARD: Stop empty payloads before they hit Laravel
-    if (!farmerUuid || farmerUuid.trim() === '') {
-      scanResult.value = {
-        status: 'error',
-        message: 'No Farmer UUID detected! Please paste a valid UUID or scan a QR code.'
-      };
-      return; // Stop execution
-    }
-
-    // 🔴 2. FRONTEND GUARD: Ensure a program is selected
-    if (!selectedProgramId.value) {
-      scanResult.value = {
-        status: 'error',
-        message: 'Please select an active program from the dropdown first.'
-      };
-      return; 
-    }
-
-    // Hit the pessimistic locking API
-    const response = await axiosInstance.post('/distributions/claim', {
-      farmer_id: farmerUuid.trim(), // Added .trim() to remove accidental spaces when copy/pasting
-      program_id: selectedProgramId.value
+    const response = await apiClient.post('/distributions/claim', {
+      farmer_id: uuid,
+      program_id: selectedProgramId.value,
     });
-    
-    scanResult.value = response.data; // Success Response
-
-  } catch (error: any) {
-    scanResult.value = error.response?.data || {
-      status: 'error',
-      message: 'Network error. Could not reach verification server.'
-    };
+    scanResult.value = response.data;
+  } catch (err: any) {
+    if (!err.response) {
+      await queueDistribution({ farmer_id: uuid, program_id: selectedProgramId.value, program_name: program?.name });
+      await syncStore.refreshCount();
+      scanResult.value = { status: 'success', offline: true };
+      return;
+    }
+    scanResult.value = err.response?.data ?? { status: 'error', message: 'Network error. Could not reach verification server.' };
   }
 };
 
@@ -218,63 +240,36 @@ const resetScanner = () => {
 </script>
 
 <style scoped>
-/* UI Styling */
-.setup-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: center;
-}
-.action-wrapper {
-  margin-top: 2rem;
-  text-align: center;
-}
-.scan-btn {
-  --border-radius: 12px;
-  height: 80px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-.helper-text {
-  color: var(--ion-color-medium);
-  font-size: 0.9rem;
-  margin-top: 1rem;
-}
+.scan-bg { --background: #f4f8f5; }
+.setup-container { max-width: 680px; margin: 0 auto; }
+.program-card { border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.step-label { font-size: 1rem; color: #1a4731; font-weight: 800; }
+.program-select-item { --background: white; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0; }
 
-/* Result Cards */
-.result-container {
-  margin-top: 2rem;
-}
-.result-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-}
-.text-white {
-  color: white !important;
-}
-.dispense-box {
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid white;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1.5rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-}
-.dispense-qty {
-  font-size: 2.5rem;
-  font-weight: 900;
-}
-.error-msg {
-  font-size: 1.2rem;
-  line-height: 1.4;
-}
-.animation-fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.program-details { margin-top: 1rem; background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; }
+.pd-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 0.9rem; }
+.pd-label { color: #64748b; }
+.pd-pct { font-size: 0.78rem; color: #64748b; text-align: right; margin: 4px 0 0; }
+
+.no-programs { color: var(--ion-color-danger); padding: 12px 0; font-size: 0.9rem; font-weight: 600; }
+
+.action-wrapper { margin-top: 2rem; text-align: center; }
+.scan-btn { --border-radius: 14px; height: 90px; font-size: 1.1rem; font-weight: 800; letter-spacing: 1.5px; }
+.helper-text { color: var(--ion-color-medium); font-size: 0.88rem; margin-top: 0.75rem; }
+
+.result-container { max-width: 680px; margin: 2rem auto 0; }
+.result-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.text-white { color: white !important; }
+.farmer-name-result { font-weight: 900; font-size: 1.5rem; margin: 0 0 1rem; }
+.detail-row-r { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.95rem; }
+.dispense-box { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.6); border-radius: 10px; padding: 1.2rem; margin-top: 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dispense-label { font-size: 0.8rem; letter-spacing: 2px; opacity: 0.85; }
+.dispense-qty { font-size: 3rem; font-weight: 900; line-height: 1; }
+.dispense-unit { font-size: 1rem; opacity: 0.85; }
+.remaining-note { font-size: 0.82rem; margin-top: 1rem; opacity: 0.85; }
+.error-msg { font-size: 1.1rem; line-height: 1.4; font-weight: 600; }
+.claimed-at { font-size: 0.85rem; margin-top: 0.75rem; opacity: 0.85; }
+.mt-4 { margin-top: 1.5rem; }
+.animation-fade-in { animation: fadeIn 0.35s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 </style>

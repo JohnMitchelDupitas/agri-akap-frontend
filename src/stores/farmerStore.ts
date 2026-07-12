@@ -6,18 +6,43 @@ import apiClient from '../utils/axios';
 export interface FarmPlot {
   id?: string;
   location_brgy: string;
+  location_city?: string;
+  location_province?: string;
   total_parcel_area_ha: number;
+  size_ha?: number;
   commodity: string;
-  // ... other plot fields
+  farm_type?: string;
+  ownership_type?: string;
+  farmer_id?: string;
 }
 
 export interface Farmer {
   id: string;
   rsbsa_no: string | null;
+  transaction_code?: string;
   first_name: string;
+  middle_name?: string | null;
   surname: string;
-  farm_plots_count?: number; // Comes from Laravel's withCount()
+  ext_name?: string | null;
+  sex?: string;
+  birthdate?: string;
+  mobile_number?: string;
+  permanent_house_no?: string | null;
+  permanent_street?: string | null;
+  permanent_brgy?: string;
+  permanent_city?: string;
+  permanent_province?: string;
+  permanent_region?: string;
+  civil_status?: string;
+  highest_education?: string;
+  livelihood_type?: string;
+  is_pwd?: boolean;
+  is_4ps_beneficiary?: boolean;
+  photo_path?: string | null;
+  farm_plots_count?: number;
+  farm_plots?: FarmPlot[];
   plots?: FarmPlot[];
+  distributions?: any[];
 }
 
 export interface PaginationMeta {

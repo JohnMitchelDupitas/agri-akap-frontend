@@ -1,10 +1,102 @@
-/* Desktop */
-.responsive-split {
-  --side-width: 250px;
-  --side-max-width: 250px;
+/* AGRI-AKAP global styles — LGU Design System
+   Applies the flat, modern government-standard look across all pages. */
+
+/* ── Base typography ─────────────────────────────────────────────── */
+body {
+  font-family: var(--ion-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile — icon-only sidebar */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--mao-text);
+  letter-spacing: -0.01em;
+}
+
+/* Airy content surface to reduce eye strain */
+ion-content {
+  --background: var(--mao-surface);
+}
+
+/* ── Toolbars / headers ──────────────────────────────────────────── */
+ion-header ion-toolbar {
+  --background: var(--ion-color-primary);
+  --color: #ffffff;
+}
+ion-header.header-collapse-condense ion-toolbar {
+  --background: var(--mao-surface);
+  --color: var(--mao-text);
+}
+/* Remove the default hairline for a flatter header */
+ion-header.header-md::after,
+ion-header .toolbar-background {
+  box-shadow: none;
+}
+
+/* ── Cards: flat, modern, subtle shadow, rounded ─────────────────── */
+ion-card {
+  border-radius: var(--mao-radius);
+  box-shadow: var(--mao-shadow);
+  background: var(--mao-card);
+  border: 1px solid var(--mao-border);
+  margin: 12px;
+}
+ion-card ion-card-header {
+  padding: 16px 16px 8px;
+}
+ion-card ion-card-content {
+  padding: 8px 16px 16px;
+}
+
+/* Reusable data-card utility for plain <div> panels */
+.data-card {
+  background: var(--mao-card);
+  border: 1px solid var(--mao-border);
+  border-radius: var(--mao-radius);
+  box-shadow: var(--mao-shadow);
+  padding: 20px;
+}
+.data-card--tight { padding: 14px; }
+.data-card:hover { box-shadow: var(--mao-shadow-hover); }
+
+/* Section titles */
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mao-green);
+  margin: 4px 0 12px;
+}
+
+/* ── Lists / items ───────────────────────────────────────────────── */
+ion-list {
+  background: transparent;
+}
+ion-item {
+  --background: var(--mao-card);
+  --border-color: var(--mao-border);
+}
+
+/* Priority / accent chips and badges use the gold accent */
+ion-badge.accent,
+.badge-accent {
+  --background: var(--mao-gold);
+  --color: #1a1a1a;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+ion-button {
+  --border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* ── Admin split-pane sidebar (used by AdminLayout) ──────────────── */
+.responsive-split {
+  --side-width: 260px;
+  --side-max-width: 260px;
+}
+
 @media (max-width: 700px) {
   .responsive-split {
     --side-width: 56px;
@@ -12,8 +104,6 @@
     --border: none;
     --side-border: none;
   }
-
-  /* Force the split pane's internal divider element to zero width */
   .responsive-split::part(container) {
     gap: 0 !important;
   }
@@ -22,6 +112,4 @@
     border-right: none !important;
     box-shadow: none !important;
   }
-
-
 }

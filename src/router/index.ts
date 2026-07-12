@@ -1,85 +1,124 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
-import { RouteRecordRaw } from "vue-router";
-import HomePage from "../views/HomePage.vue";
+import { RouteRecordRaw, RouteLocationRaw } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
-import FarmersListPage from "@/views/Farmers/FarmersListPage.vue";
+
+// ── Role home helper ──────────────────────────────────────────────────────────
+export const homeForRole = (role: string | null): string => {
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "technician") return "/tech/scanner";
+  if (role === "barangay_official") return "/review/damage-review";
+  return "/login";
+};
+
+// Role-aware legacy redirect: keep old flat URLs working after the split.
+const legacy =
+  (map: Record<string, string>, fallback: string) =>
+  (to: any): RouteLocationRaw => {
+    const role = useAuthStore().userRole || "";
+    return { path: map[role] ?? fallback, query: to.query };
+  };
 
 const routes: Array<RouteRecordRaw> = [
-  {
-    path: "/",
-    redirect: "/login",
-  },
-  {
-    path: "/home",
-    name: "Home",
-    component: HomePage,
-  },
-  {
-    path: "/farmers",
-    name: "FarmersList",
-    component: FarmersListPage,
-  },
-  {
-    path: "/farmers/register",
-    name: "FarmersRegister",
-    component: () => import("@/views/Farmers/Registration_Form.vue"),
-  },
-  {
-    path: "/dashboard",
-    name: "Dashboard",
-    component: () => import("@/views/DashboardPage.vue"),
-  },
+  { path: "/", redirect: "/login" },
+
   {
     path: "/login",
     name: "Login",
     component: () => import("@/views/LoginPage.vue"),
     meta: { requiresAuth: false },
   },
+
+  // ── Admin environment (web / desktop, sidebar) ────────────────────────────
   {
-    path: "/dashboard",
-    name: "AdminDashboard",
-    component: () => import("@/views/DashboardPage.vue"),
-    meta: {
-      requiresAuth: true,
-      role: "admin", // Only admins can access
-    },
+    path: "/admin",
+    component: () => import("@/layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true, role: "admin" },
+    children: [
+      { path: "", redirect: "/admin/dashboard" },
+      { path: "dashboard", name: "Dashboard", component: () => import("@/views/DashboardPage.vue") },
+      { path: "analytics", name: "Analytics", component: () => import("@/views/Analytics/AnalyticsPage.vue") },
+      { path: "farmers", name: "FarmersList", component: () => import("@/views/Farmers/FarmersListPage.vue") },
+      { path: "farmers/register", name: "FarmersRegister", component: () => import("@/views/Farmers/Registration_Form.vue") },
+      { path: "id-issuance", name: "IdIssuance", component: () => import("@/views/Farmers/IdIssuancePage.vue") },
+      { path: "programs", name: "Programs", component: () => import("@/views/Programs/ProgramsListPage.vue") },
+      { path: "broadcasts", name: "Broadcasts", component: () => import("@/views/Communication/BroadcastCenterPage.vue") },
+      { path: "intelligence", name: "Intelligence", component: () => import("@/views/Intelligence/IntelligenceDashboardPage.vue") },
+      { path: "map", name: "Map", component: () => import("@/views/Map/MapPage.vue") },
+      { path: "reports", name: "Reports", component: () => import("@/views/Reports/ExecutiveReportPage.vue") },
+      { path: "damage-review", name: "DamageReview", component: () => import("@/views/Damage/DamageReviewPage.vue") },
+    ],
+  },
+
+  // ── Technician environment (mobile, bottom tabs) ──────────────────────────
+  {
+    path: "/tech",
+    component: () => import("@/layouts/TechnicianLayout.vue"),
+    meta: { requiresAuth: true, role: "technician" },
+    children: [
+      { path: "", redirect: "/tech/scanner" },
+      { path: "scanner", name: "Scan", component: () => import("@/views/Scanner/ScannerPage.vue") },
+      { path: "field", name: "FieldIntelligence", component: () => import("@/views/Technician/FieldIntelligencePage.vue") },
+      { path: "damage", name: "DamageAssessment", component: () => import("@/views/Technician/DamageAssessmentPage.vue") },
+      { path: "sync", name: "PendingSync", component: () => import("@/views/Sync/PendingSyncPage.vue") },
+      { path: "home", name: "Home", component: () => import("@/views/HomePage.vue") },
+      { path: "farmers", name: "TechFarmersList", component: () => import("@/views/Farmers/FarmersListPage.vue") },
+      { path: "farmers/register", name: "TechFarmersRegister", component: () => import("@/views/Farmers/Registration_Form.vue") },
+      { path: "programs", name: "TechPrograms", component: () => import("@/views/Programs/ProgramsListPage.vue") },
+      { path: "map", name: "TechMap", component: () => import("@/views/Map/MapPage.vue") },
+      { path: "profile", name: "TechProfile", component: () => import("@/views/Technician/ProfilePage.vue") },
+    ],
+  },
+
+  // ── Barangay review environment (minimal) ─────────────────────────────────
+  {
+    path: "/review",
+    component: () => import("@/layouts/ReviewLayout.vue"),
+    meta: { requiresAuth: true, role: "barangay_official" },
+    children: [
+      { path: "", redirect: "/review/damage-review" },
+      { path: "damage-review", name: "ReviewDamage", component: () => import("@/views/Damage/DamageReviewPage.vue") },
+      { path: "map", name: "ReviewMap", component: () => import("@/views/Map/MapPage.vue") },
+    ],
+  },
+
+  // ── Legacy flat-path redirects (role-aware, query preserved) ──────────────
+  { path: "/dashboard", redirect: "/admin/dashboard" },
+  { path: "/analytics", redirect: "/admin/analytics" },
+  { path: "/reports", redirect: "/admin/reports" },
+  { path: "/intelligence", redirect: "/admin/intelligence" },
+  { path: "/broadcasts", redirect: "/admin/broadcasts" },
+  { path: "/id-issuance", redirect: "/admin/id-issuance" },
+  {
+    path: "/farmers",
+    redirect: legacy({ admin: "/admin/farmers", technician: "/tech/farmers" }, "/admin/farmers"),
   },
   {
-    path: "/technician-home",
-    name: "TechnicianHome",
-    component: () => import("@/views/HomePage.vue"), // Or a specific Tech UI
-    meta: {
-      requiresAuth: true,
-      role: "technician", // Only technicians can access
-    },
-  },
-  {
-    path: "/ScanQR",
-    name: "ScanQR",
-    component: () => import("@/views/Scanner/ScannerPage.vue"),
-    meta: {
-      requiresAuth: true,
-      role: "technician", // Only technicians can access
-    },
+    path: "/farmers/register",
+    redirect: legacy({ admin: "/admin/farmers/register", technician: "/tech/farmers/register" }, "/admin/farmers/register"),
   },
   {
     path: "/programs",
-    name: "Programs",
-    component: () => import("@/views/Programs/ProgramsListPage.vue"),
-    meta: { requiresAuth: true },
+    redirect: legacy({ admin: "/admin/programs", technician: "/tech/programs" }, "/admin/programs"),
   },
   {
-      path: '/id-issuance',
-      name: 'IdIssuance',
-      component: () => import('@/views/Farmers/IdIssuancePage.vue'),
-      meta: { requiresAuth: true }
-    },
+    path: "/map",
+    redirect: legacy({ admin: "/admin/map", technician: "/tech/map", barangay_official: "/review/map" }, "/admin/map"),
+  },
   {
-      path: '/broadcasts',
-      name: 'Broadcasts',
-      component: () => import('@/views/Communication/BroadcastCenterPage.vue'),
-      meta: { requiresAuth: true }
-    },
+    path: "/damage-review",
+    redirect: legacy({ admin: "/admin/damage-review", barangay_official: "/review/damage-review" }, "/admin/damage-review"),
+  },
+  { path: "/scan", redirect: "/tech/scanner" },
+  { path: "/ScanQR", redirect: "/tech/scanner" },
+  { path: "/field-intelligence", redirect: "/tech/field" },
+  { path: "/field-intel", redirect: "/tech/field" },
+  { path: "/damage-assessment", redirect: "/tech/damage" },
+  { path: "/pending-sync", redirect: "/tech/sync" },
+  { path: "/home", redirect: "/tech/home" },
+  { path: "/technician-home", redirect: "/tech/home" },
+
+  // Catch-all: bounce to login (guard then routes to the correct home).
+  { path: "/:pathMatch(.*)*", redirect: "/login" },
 ];
 
 const router = createRouter({
@@ -87,45 +126,35 @@ const router = createRouter({
   routes,
 });
 
-// DEVELOPER MODE SWITCH
-// Set to true to let UI designers work freely without logging in.
-// Set to false for production / testing real API data.
-const DEV_BYPASS_AUTH = true;
+const roleAllowed = (required: unknown, role: string | null): boolean => {
+  if (!required) return true;
+  if (Array.isArray(required)) return !!role && required.includes(role);
+  return required === role;
+};
 
-// Global Route Guard
-router.beforeEach((to, from, next) => {
-  if (DEV_BYPASS_AUTH) {
-    return next();
-  }
-
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
-  const userRole = authStore.userRole?.value;
+  const userRole = authStore.userRole;
+  const home = homeForRole(userRole);
+  // A session is only usable when we have a token AND a role we can route to.
+  const hasValidSession = isAuthenticated && home !== "/login";
 
-  // 1. If route requires auth and user is NOT logged in
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: "Login" });
+  if (to.meta.requiresAuth && !hasValidSession) {
+    // Avoid redirecting to Login if we're already heading there (prevents loops).
+    return to.name === "Login" ? next() : next({ name: "Login" });
   }
-  // 2. If user is logged in, restrict access by role
-  else if (to.meta.requiresAuth && to.meta.role && to.meta.role !== userRole) {
-    // Redirect to their respective default page if they try to access the wrong role's page
-    next(
-      userRole === "admin" ?
-        { name: "AdminDashboard" }
-      : { name: "TechnicianHome" },
-    );
+
+  // Prevent cross-role access via manual URL entry.
+  if (to.meta.requiresAuth && !roleAllowed(to.meta.role, userRole)) {
+    return to.path === home ? next() : next(home);
   }
-  // 3. If logged-in user tries to access the login page
-  else if (to.name === "Login" && isAuthenticated) {
-    next(
-      userRole === "admin" ?
-        { name: "AdminDashboard" }
-      : { name: "TechnicianHome" },
-    );
+
+  if (to.name === "Login" && hasValidSession) {
+    return next(home);
   }
-  // 4. Otherwise, let them proceed
-  else {
-    next();
-  }
+
+  return next();
 });
+
 export default router;

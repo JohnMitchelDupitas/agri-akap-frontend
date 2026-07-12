@@ -60,7 +60,20 @@
                 <p><strong>Rule:</strong> {{ program.per_hectare_allocation }} {{ program.unit_of_measurement }} per Ha.</p>
                 <p><strong>Cap:</strong> Max {{ program.max_hectare_cap }} Ha. per farmer.</p>
                 <p class="text-muted small">Valid: {{ formatDate(program.start_date) }} to {{ formatDate(program.end_date) }}</p>
+                <p class="text-muted small">Beneficiaries: <strong>{{ program.distributions_count ?? 0 }}</strong></p>
               </div>
+
+              <ion-button
+                v-if="authStore.userRole === 'admin' && program.is_active"
+                expand="block"
+                fill="outline"
+                color="medium"
+                size="small"
+                class="mt-2"
+                @click="deactivateProgram(program)"
+              >
+                Deactivate Program
+              </ion-button>
             </ion-card-content>
           </ion-card>
         </div>
@@ -78,28 +91,60 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { 
+import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
-  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
-  IonBadge, IonSpinner 
+  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent,
+  IonBadge, IonSpinner, toastController, alertController,
 } from '@ionic/vue';
 import axiosInstance from '@/utils/axios';
+import { useAuthStore } from '@/stores/authStore';
 import CreateProgramModal from './CreateProgramModal.vue';
 
 const programs = ref<any[]>([]);
 const isLoading = ref(true);
 const isModalOpen = ref(false);
+const authStore = useAuthStore();
 
 const fetchPrograms = async () => {
   isLoading.value = true;
   try {
     const res = await axiosInstance.get('/programs');
-    programs.value = res.data.data.data; // Assuming Laravel standard pagination wrapping
-  } catch (error) {
-    console.error("Failed to load programs", error);
+    programs.value = res.data.data.data ?? [];
+  } catch {
+    const t = await toastController.create({ message: 'Failed to load programs.', duration: 2500, color: 'danger', position: 'top' });
+    await t.present();
   } finally {
     isLoading.value = false;
   }
+};
+
+const deactivateProgram = async (program: any) => {
+  const alert = await alertController.create({
+    header: 'Deactivate Program',
+    message: `Are you sure you want to deactivate "<strong>${program.name}</strong>"? Existing distributions will be preserved.`,
+    buttons: [
+      { text: 'Cancel', role: 'cancel' },
+      {
+        text: 'Deactivate',
+        cssClass: 'alert-btn-danger',
+        handler: async () => {
+          try {
+            await axiosInstance.patch(`/programs/${program.id}/deactivate`);
+            const t = await toastController.create({ message: 'Program deactivated.', duration: 2500, color: 'success', position: 'top' });
+            await t.present();
+            fetchPrograms();
+          } catch (err: any) {
+            const t = await toastController.create({
+              message: err.response?.data?.message ?? 'Failed to deactivate.',
+              duration: 2500, color: 'danger', position: 'top',
+            });
+            await t.present();
+          }
+        },
+      },
+    ],
+  });
+  await alert.present();
 };
 
 const onProgramCreated = () => {
@@ -147,6 +192,8 @@ onMounted(() => {
 .allocation-rules p { margin: 0 0 4px 0; }
 .text-muted { color: #888; }
 .text-capitalize { text-transform: capitalize; }
+.mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 1rem; }
 .mt-4 { margin-top: 1.5rem; }
+.small { font-size: 0.82rem; }
 </style>
