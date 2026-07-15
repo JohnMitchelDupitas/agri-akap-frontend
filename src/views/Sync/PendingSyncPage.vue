@@ -5,7 +5,7 @@
         <ion-buttons slot="start">
           <ion-menu-button></ion-menu-button>
         </ion-buttons>
-        <ion-title>Pending Sync</ion-title>
+        <ion-title>Sync &amp; Activity Trail</ion-title>
         <ion-buttons slot="end">
           <ion-chip :color="syncStore.online ? 'success' : 'medium'" outline>
             <ion-icon :icon="syncStore.online ? cloudDoneOutline : cloudOfflineOutline"></ion-icon>
@@ -13,10 +13,20 @@
           </ion-chip>
         </ion-buttons>
       </ion-toolbar>
+      <ion-toolbar>
+        <ion-segment :value="activeTab" @ionChange="(e: any) => activeTab = e.detail.value">
+          <ion-segment-button value="queue">
+            <ion-label>Sync Queue</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="contributions">
+            <ion-label>My Contributions</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding queue-bg">
-      <div class="wrapper">
+      <div class="wrapper" v-if="activeTab === 'queue'">
         <ion-card class="summary-card">
           <ion-card-content>
             <div class="summary-row">
@@ -39,7 +49,6 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- Distributions -->
         <h3 class="section-title" v-if="distributions.length">Subsidy Claims ({{ distributions.length }})</h3>
         <ion-card v-for="d in distributions" :key="d.client_id" class="item-card">
           <ion-card-content>
@@ -56,7 +65,6 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- Assessments -->
         <h3 class="section-title" v-if="assessments.length">Damage Assessments ({{ assessments.length }})</h3>
         <ion-card v-for="a in assessments" :key="a.client_id" class="item-card">
           <ion-card-content>
@@ -78,26 +86,95 @@
           <p>All records are synced. Nothing pending.</p>
         </div>
       </div>
+
+      <div class="wrapper" v-else>
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <p class="contrib-title">Reporting Period</p>
+            <div class="period-row">
+              <ion-input type="date" label="From" label-placement="stacked" :value="contribFrom" @ionInput="(e: any) => contribFrom = e.detail.value"></ion-input>
+              <ion-input type="date" label="To" label-placement="stacked" :value="contribTo" @ionInput="(e: any) => contribTo = e.detail.value"></ion-input>
+              <ion-button @click="loadContributions" :disabled="contribLoading">
+                {{ contribLoading ? 'Loading…' : 'Refresh' }}
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <div v-if="contribLoading" class="loading-center">
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
+        </div>
+
+        <template v-else-if="contribData">
+          <div class="kpi-row">
+            <div class="kpi-chip">
+              <span class="kpi-n">{{ contribData.summary.distributions }}</span>
+              <span class="kpi-l">Distributions</span>
+            </div>
+            <div class="kpi-chip">
+              <span class="kpi-n">{{ contribData.summary.damage_assessments }}</span>
+              <span class="kpi-l">Assessments</span>
+            </div>
+            <div class="kpi-chip">
+              <span class="kpi-n">{{ contribData.summary.pest_outbreaks }}</span>
+              <span class="kpi-l">Pest Logs</span>
+            </div>
+          </div>
+
+          <h3 class="section-title">Recent Activity</h3>
+          <ion-card v-for="row in contribData.recent" :key="row.type + '-' + row.id" class="item-card">
+            <ion-card-content>
+              <div class="item-head">
+                <strong>{{ row.label }}</strong>
+                <ion-badge color="medium">{{ typeLabel(row.type) }}</ion-badge>
+              </div>
+              <p class="item-sub">{{ row.detail }} <span v-if="row.barangay">· {{ row.barangay }}</span></p>
+              <p class="item-meta">{{ row.date }} · {{ row.quantity }} · {{ row.status }}</p>
+            </ion-card-content>
+          </ion-card>
+
+          <div v-if="!contribData.recent?.length" class="empty-state">
+            <p>No contributions recorded for this period.</p>
+          </div>
+        </template>
+
+        <div v-if="contribError" class="offline-note">{{ contribError }}</div>
+      </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonCard, IonCardContent, IonButton, IonIcon, IonBadge, IonChip, IonLabel,
+  IonSegment, IonSegmentButton, IonInput, IonSpinner,
 } from '@ionic/vue';
 import {
   syncOutline, trashOutline, cloudDoneOutline, cloudOfflineOutline, checkmarkDoneCircleOutline,
 } from 'ionicons/icons';
 import { db, type PendingDistribution, type PendingAssessment, type QueueStatus } from '@/services/db';
 import { useSyncStore } from '@/stores/syncStore';
+import axiosInstance from '@/utils/axios';
 
 const syncStore = useSyncStore();
 const distributions = ref<PendingDistribution[]>([]);
 const assessments = ref<PendingAssessment[]>([]);
+const activeTab = ref('queue');
 let timer: number | undefined;
+
+const monthStart = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+};
+const today = () => new Date().toISOString().slice(0, 10);
+
+const contribFrom = ref(monthStart());
+const contribTo = ref(today());
+const contribLoading = ref(false);
+const contribError = ref('');
+const contribData = ref<any>(null);
 
 const load = async () => {
   distributions.value = await db.pendingDistributions.orderBy('created_at').reverse().toArray();
@@ -125,6 +202,34 @@ const statusColor = (s: QueueStatus) =>
 
 const formatDate = (iso: string) => new Date(iso).toLocaleString();
 
+const typeLabel = (t: string) => {
+  if (t === 'distribution') return 'Distribution';
+  if (t === 'damage_assessment') return 'Assessment';
+  if (t === 'pest_outbreak') return 'Pest';
+  return t;
+};
+
+const loadContributions = async () => {
+  contribLoading.value = true;
+  contribError.value = '';
+  try {
+    const res = await axiosInstance.get('/technician/activity-log', {
+      params: { date_from: contribFrom.value, date_to: contribTo.value },
+    });
+    contribData.value = res.data.data;
+  } catch {
+    contribError.value = 'Could not load contribution history. Check your connection.';
+  } finally {
+    contribLoading.value = false;
+  }
+};
+
+watch(activeTab, (tab) => {
+  if (tab === 'contributions' && !contribData.value) {
+    loadContributions();
+  }
+});
+
 onMounted(async () => {
   await load();
   timer = window.setInterval(load, 4000);
@@ -149,4 +254,12 @@ onUnmounted(() => timer && clearInterval(timer));
 .item-error { color: var(--ion-color-danger); font-size: 0.85rem; margin: 6px 0 0; }
 .empty-state { text-align: center; color: #94a3b8; margin-top: 3rem; }
 .empty-state ion-icon { font-size: 3.5rem; color: var(--ion-color-success); }
+.contrib-title { font-weight: 800; color: #1a4731; margin: 0 0 0.5rem; }
+.period-row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.period-row ion-input { flex: 1; min-width: 120px; --background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 8px; }
+.kpi-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.kpi-chip { flex: 1; min-width: 100px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; text-align: center; }
+.kpi-n { display: block; font-size: 1.6rem; font-weight: 900; color: #1a4731; }
+.kpi-l { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+.loading-center { text-align: center; padding: 2rem; }
 </style>

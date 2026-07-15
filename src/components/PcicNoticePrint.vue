@@ -9,44 +9,52 @@
     <section class="notice-section">
       <h4>Farmer Information</h4>
       <table class="notice-table">
-        <tr><td class="lbl">Name</td><td>{{ data.farmer.name }}</td></tr>
-        <tr><td class="lbl">RSBSA No.</td><td>{{ data.farmer.rsbsa_no || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Mobile</td><td>{{ data.farmer.mobile_number || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Address</td><td>{{ data.farmer.barangay }}, {{ data.farmer.city }}, {{ data.farmer.province }}</td></tr>
-        <tr><td class="lbl">Sex / Birthdate</td><td>{{ data.farmer.sex || 'N/A' }} / {{ data.farmer.birthdate || 'N/A' }}</td></tr>
+        <tbody>
+          <tr><td class="lbl">Name</td><td>{{ data.farmer.name }}</td></tr>
+          <tr><td class="lbl">RSBSA No.</td><td>{{ data.farmer.rsbsa_no || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Mobile</td><td>{{ data.farmer.mobile_number || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Address</td><td>{{ data.farmer.barangay }}, {{ data.farmer.city }}, {{ data.farmer.province }}</td></tr>
+          <tr><td class="lbl">Sex / Birthdate</td><td>{{ data.farmer.sex || 'N/A' }} / {{ data.farmer.birthdate || 'N/A' }}</td></tr>
+        </tbody>
       </table>
     </section>
 
     <section class="notice-section">
       <h4>Farm Parcel</h4>
       <table class="notice-table">
-        <tr><td class="lbl">Commodity</td><td>{{ data.plot.commodity || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Registered Area</td><td>{{ data.plot.size_ha }} ha</td></tr>
-        <tr><td class="lbl">Barangay</td><td>{{ data.plot.location_brgy || data.farmer.barangay }}</td></tr>
-        <tr><td class="lbl">Farm Type</td><td>{{ data.plot.farm_type || 'N/A' }}</td></tr>
+        <tbody>
+          <tr><td class="lbl">Commodity</td><td>{{ data.plot.commodity || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Registered Area</td><td>{{ data.plot.size_ha }} ha</td></tr>
+          <tr><td class="lbl">Barangay</td><td>{{ data.plot.location_brgy || data.farmer.barangay }}</td></tr>
+          <tr><td class="lbl">Farm Type</td><td>{{ data.plot.farm_type || 'N/A' }}</td></tr>
+        </tbody>
       </table>
     </section>
 
     <section class="notice-section">
       <h4>Calamity &amp; Damage Details</h4>
       <table class="notice-table">
-        <tr><td class="lbl">Calamity Type</td><td>{{ data.calamity.type }}</td></tr>
-        <tr><td class="lbl">Calamity Name</td><td>{{ data.calamity.name }}</td></tr>
-        <tr><td class="lbl">Date of Calamity</td><td>{{ data.calamity.date }}</td></tr>
-        <tr><td class="lbl">Crop Stage</td><td>{{ data.calamity.crop_stage || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Damage Percentage</td><td>{{ data.calamity.damage_percentage }}%</td></tr>
-        <tr><td class="lbl">Area Destroyed</td><td>{{ data.calamity.area_destroyed_ha }} ha</td></tr>
-        <tr><td class="lbl">Estimated Value Lost</td><td>PHP {{ formatMoney(data.calamity.estimated_value_lost) }}</td></tr>
+        <tbody>
+          <tr><td class="lbl">Calamity Type</td><td>{{ data.calamity.type }}</td></tr>
+          <tr><td class="lbl">Calamity Name</td><td>{{ data.calamity.name }}</td></tr>
+          <tr><td class="lbl">Date of Calamity</td><td>{{ data.calamity.date }}</td></tr>
+          <tr><td class="lbl">Crop Stage</td><td>{{ data.calamity.crop_stage || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Damage Percentage</td><td>{{ data.calamity.damage_percentage }}%</td></tr>
+          <tr><td class="lbl">Area Destroyed</td><td>{{ data.calamity.area_destroyed_ha }} ha</td></tr>
+          <tr><td class="lbl">Estimated Value Lost</td><td>PHP {{ formatMoney(data.calamity.estimated_value_lost) }}</td></tr>
+        </tbody>
       </table>
     </section>
 
     <section class="notice-section" v-if="data.enrollment">
       <h4>PCIC Enrollment Reference</h4>
       <table class="notice-table">
-        <tr><td class="lbl">Policy Reference</td><td>{{ data.enrollment.policy_reference || 'Pending' }}</td></tr>
-        <tr><td class="lbl">Coverage Year</td><td>{{ data.enrollment.coverage_year }}</td></tr>
-        <tr><td class="lbl">Crop Season</td><td>{{ data.enrollment.crop_season }}</td></tr>
-        <tr><td class="lbl">Insured Area</td><td>{{ data.enrollment.insured_area_ha }} ha</td></tr>
+        <tbody>
+          <tr><td class="lbl">Policy Reference</td><td>{{ data.enrollment.policy_reference || 'Pending' }}</td></tr>
+          <tr><td class="lbl">Coverage Year</td><td>{{ data.enrollment.coverage_year }}</td></tr>
+          <tr><td class="lbl">Crop Season</td><td>{{ data.enrollment.crop_season }}</td></tr>
+          <tr><td class="lbl">Insured Area</td><td>{{ data.enrollment.insured_area_ha }} ha</td></tr>
+        </tbody>
       </table>
     </section>
 
@@ -66,11 +74,13 @@
     <section class="notice-section">
       <h4>Audit Trail</h4>
       <table class="notice-table">
-        <tr><td class="lbl">Field Technician</td><td>{{ data.audit.technician || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Barangay Verifier</td><td>{{ data.audit.verifier || 'N/A' }}</td></tr>
-        <tr><td class="lbl">MAO Approver</td><td>{{ data.audit.approver || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Notice Filed By</td><td>{{ data.audit.notice_filer || 'N/A' }}</td></tr>
-        <tr><td class="lbl">Status</td><td>{{ data.status }}</td></tr>
+        <tbody>
+          <tr><td class="lbl">Field Technician</td><td>{{ data.audit.technician || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Barangay Verifier</td><td>{{ data.audit.verifier || 'N/A' }}</td></tr>
+          <tr><td class="lbl">MAO Approver</td><td>{{ data.audit.approver || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Notice Filed By</td><td>{{ data.audit.notice_filer || 'N/A' }}</td></tr>
+          <tr><td class="lbl">Status</td><td>{{ data.status }}</td></tr>
+        </tbody>
       </table>
     </section>
 

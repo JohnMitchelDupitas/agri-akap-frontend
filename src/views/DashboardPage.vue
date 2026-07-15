@@ -82,6 +82,18 @@
                 </ion-card>
               </ion-col>
 
+              <ion-col size="6" size-lg="3">
+                <ion-card class="kpi-card" @click="router.push('/admin/reports')">
+                  <ion-card-content>
+                    <div class="kpi-icon bg-purple-light"><ion-icon :icon="documentTextOutline"></ion-icon></div>
+                    <div class="kpi-data">
+                      <h3>{{ stats.metrics.pending_reports ?? 0 }}</h3>
+                      <p>Pending Reports</p>
+                    </div>
+                  </ion-card-content>
+                </ion-card>
+              </ion-col>
+
               <!-- Dispensed breakdown (dynamic) -->
               <ion-col
                 size="12" size-md="6" size-lg="3"
@@ -234,6 +246,7 @@ onMounted(fetchStats);
 .bg-gold-light { background: #fff8e1; color: #e65100; }
 .bg-red-light { background: #ffebee; color: #c0392b; }
 .bg-orange-light { background: #fff3e0; color: #e65100; }
+.bg-purple-light { background: #f3e8ff; color: #7c3aed; }
 .highlight-card { border-bottom: 4px solid #c8a227; }
 .kpi-data h3 { margin: 0; font-size: 1.7rem; font-weight: 900; color: #1e293b; }
 .kpi-data p { margin: 2px 0 0; font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }

@@ -46,7 +46,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: "intelligence", name: "Intelligence", component: () => import("@/views/Intelligence/IntelligenceDashboardPage.vue") },
       { path: "map", name: "Map", component: () => import("@/views/Map/MapPage.vue") },
       { path: "reports", name: "Reports", component: () => import("@/views/Reports/ExecutiveReportPage.vue") },
-      { path: "damage-review", name: "DamageReview", component: () => import("@/views/Damage/DamageReviewPage.vue") },
+      { path: "damage-review", name: "DamageReview", component: () => import("@/views/Admin/DamageValidationView.vue") },
       { path: "pcic-claims", name: "PcicClaims", component: () => import("@/views/Damage/PcicClaimsPage.vue") },
     ],
   },
@@ -79,7 +79,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, role: "barangay_official" },
     children: [
       { path: "", redirect: "/review/damage-review" },
-      { path: "damage-review", name: "ReviewDamage", component: () => import("@/views/Damage/DamageReviewPage.vue") },
+      { path: "damage-review", name: "ReviewDamage", component: () => import("@/views/Admin/DamageValidationView.vue") },
       { path: "map", name: "ReviewMap", component: () => import("@/views/Map/MapPage.vue") },
     ],
   },
