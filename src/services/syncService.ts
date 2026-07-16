@@ -3,6 +3,7 @@ import {
   db,
   getDeviceId,
   newUuid,
+  pendingQueueCount,
   type PendingAssessment,
   type PendingDistribution,
 } from './db';
@@ -112,11 +113,7 @@ export async function queueAssessment(
 }
 
 export async function pendingCount(): Promise<number> {
-  const [a, b] = await Promise.all([
-    db.pendingDistributions.count(),
-    db.pendingAssessments.count(),
-  ]);
-  return a + b;
+  return pendingQueueCount();
 }
 
 /* ------------------------------- Flushing ------------------------------- */

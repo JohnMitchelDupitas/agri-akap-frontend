@@ -92,6 +92,15 @@ class AgriAkapDB extends Dexie {
 
 export const db = new AgriAkapDB();
 
+/** Count unsynced field records (distributions + assessments). Safe for axios/auth use — no HTTP deps. */
+export async function pendingQueueCount(): Promise<number> {
+  const [distributions, assessments] = await Promise.all([
+    db.pendingDistributions.count(),
+    db.pendingAssessments.count(),
+  ]);
+  return distributions + assessments;
+}
+
 /** Generate a client-side UUID (used as the eventual server PK). */
 export function newUuid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

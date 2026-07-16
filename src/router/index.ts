@@ -27,6 +27,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/views/LoginPage.vue"),
     meta: { requiresAuth: false },
   },
+  {
+    path: "/session-lock",
+    name: "SessionLock",
+    component: () => import("@/views/SessionLockPage.vue"),
+    meta: { requiresAuth: false },
+  },
 
   // ── Admin environment (web / desktop, sidebar) ────────────────────────────
   {
@@ -142,6 +148,14 @@ router.beforeEach((to, _from, next) => {
   const home = homeForRole(userRole);
   // A session is only usable when we have a token AND a role we can route to.
   const hasValidSession = isAuthenticated && home !== "/login";
+
+  // Soft-locked sessions (expired token / inactivity) must re-auth without losing queue.
+  if (authStore.sessionLocked && to.name !== "SessionLock" && to.name !== "Login") {
+    return next({ name: "SessionLock" });
+  }
+  if (!authStore.sessionLocked && to.name === "SessionLock") {
+    return next(hasValidSession ? home : { name: "Login" });
+  }
 
   if (to.meta.requiresAuth && !hasValidSession) {
     // Avoid redirecting to Login if we're already heading there (prevents loops).

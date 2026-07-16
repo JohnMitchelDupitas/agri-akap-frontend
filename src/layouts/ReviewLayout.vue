@@ -1,49 +1,51 @@
 <template>
-  <ion-split-pane content-id="review-content" when="md" class="responsive-split">
-    <ion-menu content-id="review-content" type="overlay">
-      <ion-header>
-        <ion-toolbar color="primary">
-          <ion-title>
-            <div class="brand">
-              <span class="brand-name">AGRI-AKAP</span>
-              <span class="brand-sub">Barangay Review</span>
-            </div>
-          </ion-title>
-        </ion-toolbar>
-      </ion-header>
+  <ion-page>
+    <ion-split-pane content-id="review-content" when="md" class="responsive-split">
+      <ion-menu content-id="review-content" type="overlay">
+        <ion-header>
+          <ion-toolbar color="primary">
+            <ion-title>
+              <div class="brand">
+                <span class="brand-name">AGRI-AKAP</span>
+                <span class="brand-sub">Barangay Review</span>
+              </div>
+            </ion-title>
+          </ion-toolbar>
+        </ion-header>
 
-      <ion-content>
-        <ion-list>
-          <ion-menu-toggle :auto-hide="false" v-for="(p, i) in pages" :key="i">
-            <ion-item
-              router-direction="root"
-              :router-link="p.url"
-              lines="none"
-              :detail="false"
-              class="sidebar-item"
-            >
-              <ion-icon slot="start" :icon="p.icon" class="sidebar-icon"></ion-icon>
-              <ion-label class="menu-label">{{ p.title }}</ion-label>
-            </ion-item>
-          </ion-menu-toggle>
+        <ion-content>
+          <ion-list>
+            <ion-menu-toggle :auto-hide="false" v-for="(p, i) in pages" :key="i">
+              <ion-item
+                router-direction="root"
+                :router-link="p.url"
+                lines="none"
+                :detail="false"
+                class="sidebar-item"
+              >
+                <ion-icon slot="start" :icon="p.icon" class="sidebar-icon"></ion-icon>
+                <ion-label class="menu-label">{{ p.title }}</ion-label>
+              </ion-item>
+            </ion-menu-toggle>
 
-          <ion-menu-toggle :auto-hide="false">
-            <ion-item button lines="none" :detail="false" class="sidebar-item logout" @click="handleLogout">
-              <ion-icon slot="start" :icon="logOutOutline" class="sidebar-icon"></ion-icon>
-              <ion-label class="menu-label">Logout</ion-label>
-            </ion-item>
-          </ion-menu-toggle>
-        </ion-list>
-      </ion-content>
-    </ion-menu>
+            <ion-menu-toggle :auto-hide="false">
+              <ion-item button lines="none" :detail="false" class="sidebar-item logout" @click="handleLogout">
+                <ion-icon slot="start" :icon="logOutOutline" class="sidebar-icon"></ion-icon>
+                <ion-label class="menu-label">Logout</ion-label>
+              </ion-item>
+            </ion-menu-toggle>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
 
-    <ion-router-outlet id="review-content" />
-  </ion-split-pane>
+      <ion-router-outlet id="review-content" />
+    </ion-split-pane>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import {
-  IonContent, IonIcon, IonItem, IonLabel, IonList, IonMenu, IonMenuToggle,
+  IonPage, IonContent, IonIcon, IonItem, IonLabel, IonList, IonMenu, IonMenuToggle,
   IonTitle, IonToolbar, IonHeader, IonRouterOutlet, IonSplitPane,
 } from '@ionic/vue';
 import { shieldCheckmarkOutline, mapOutline, logOutOutline } from 'ionicons/icons';

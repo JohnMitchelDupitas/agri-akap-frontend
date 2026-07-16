@@ -15,7 +15,8 @@ const authStore = useAuthStore();
 
 onMounted(async () => {
   syncStore.init();
-  // Validate cached token on every app start — catches deactivated/expired sessions.
+  // Validate cached token; start inactivity watcher; honor soft-lock without wiping IndexedDB.
   await authStore.restoreSession();
+  authStore.startInactivityWatcher();
 });
 </script>
