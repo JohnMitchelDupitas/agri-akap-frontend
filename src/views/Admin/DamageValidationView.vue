@@ -7,7 +7,7 @@
         </ion-buttons>
         <ion-title>{{ pageTitle }}</ion-title>
         <ion-buttons slot="end" v-if="canApprove">
-          <ion-button class="export-btn" @click="exportApprovedList" :disabled="exportLoading">
+          <ion-button class="export-btn no-print" @click="exportApprovedList" :disabled="exportLoading">
             <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
             Export Approved List
           </ion-button>
@@ -89,51 +89,59 @@
         </div>
 
         <template v-else>
-          <p class="record-count">{{ filteredReports.length }} record{{ filteredReports.length === 1 ? '' : 's' }}</p>
+          <EmptyState
+            v-if="!filteredReports.length"
+            variant="documents"
+            title="No damage reports"
+            message="No pending damage reports found. Adjust filters or wait for new technician submissions."
+            action-label="Clear Filters"
+            @action="clearFilters"
+          />
 
-          <div class="table-wrap">
-            <table class="ledger-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Farmer Name</th>
-                  <th>Farm Address</th>
-                  <th>Crop Type</th>
-                  <th>Damage Severity</th>
-                  <th>Area Damaged (ha)</th>
-                  <th>Date Created</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="!filteredReports.length">
-                  <td colspan="9" class="empty-row">No damage reports match the current filters.</td>
-                </tr>
-                <tr v-for="(row, idx) in filteredReports" :key="row.id">
-                  <td class="ta-center">{{ idx + 1 }}</td>
-                  <td class="font-bold">{{ row.farmer_name }}</td>
-                  <td>{{ row.barangay }}</td>
-                  <td>{{ row.crop_type }}</td>
-                  <td>
-                    <span class="severity-badge" :class="severityClass(row.damage_percentage)">
-                      {{ severityLabel(row.damage_percentage) }} ({{ row.damage_percentage }}%)
-                    </span>
-                  </td>
-                  <td class="ta-center">{{ Number(row.area_destroyed_ha).toFixed(2) }}</td>
-                  <td class="nowrap">{{ row.date_created }}</td>
-                  <td>
-                    <ion-badge :color="statusColor(row.status)">{{ row.status }}</ion-badge>
-                  </td>
-                  <td>
-                    <ion-button size="small" class="review-btn" @click="openReview(row)">
-                      Review
-                    </ion-button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <template v-else>
+            <p class="record-count">{{ filteredReports.length }} record{{ filteredReports.length === 1 ? '' : 's' }}</p>
+
+            <div class="table-wrap">
+              <table class="ledger-table mao-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Farmer Name</th>
+                    <th>Farm Address</th>
+                    <th>Crop Type</th>
+                    <th>Damage Severity</th>
+                    <th>Area Damaged (ha)</th>
+                    <th>Date Created</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in filteredReports" :key="row.id">
+                    <td class="ta-center">{{ idx + 1 }}</td>
+                    <td class="font-bold">{{ row.farmer_name }}</td>
+                    <td>{{ row.barangay }}</td>
+                    <td>{{ row.crop_type }}</td>
+                    <td>
+                      <span class="severity-badge" :class="severityClass(row.damage_percentage)">
+                        {{ severityLabel(row.damage_percentage) }} ({{ row.damage_percentage }}%)
+                      </span>
+                    </td>
+                    <td class="ta-center">{{ Number(row.area_destroyed_ha).toFixed(2) }}</td>
+                    <td class="nowrap">{{ row.date_created }}</td>
+                    <td>
+                      <StatusBadge :status="row.status" />
+                    </td>
+                    <td>
+                      <ion-button size="small" class="review-btn" @click="openReview(row)">
+                        Review
+                      </ion-button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
         </template>
       </div>
 
@@ -153,7 +161,7 @@
             <div class="detail-grid">
               <div class="detail-field">
                 <span class="lbl">Status</span>
-                <span class="val"><ion-badge :color="statusColor(selected.status)">{{ selected.status }}</ion-badge></span>
+                <span class="val"><StatusBadge :status="selected.status" /></span>
               </div>
               <div class="detail-field">
                 <span class="lbl">Date Created</span>
@@ -250,7 +258,7 @@
       </ion-modal>
 
       <!-- Print region (hidden on screen, shown on print) -->
-      <div class="print-only">
+      <div class="print-only print-document">
         <SupportQualifiedListPrint
           v-if="printRows.length"
           :rows="printRows"
@@ -265,7 +273,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
-  IonButton, IonIcon, IonBadge, IonSelect, IonSelectOption, IonModal, IonSpinner,
+  IonButton, IonIcon, IonSelect, IonSelectOption, IonModal, IonSpinner,
   toastController, alertController,
 } from '@ionic/vue';
 import {
@@ -275,6 +283,8 @@ import {
 import apiClient from '@/utils/axios';
 import { useAuthStore } from '@/stores/authStore';
 import SupportQualifiedListPrint from '@/components/SupportQualifiedListPrint.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import { supportAllocation } from '@/utils/supportAllocation';
 
 export type ValidationStatus = 'Pending' | 'Verified' | 'Approved' | 'Rejected';
@@ -408,6 +418,14 @@ const onStatusChange = (e: any) => {
   fetchList();
 };
 
+const clearFilters = () => {
+  filters.barangay = '';
+  filters.severity = '';
+  filters.crop = '';
+  filters.status = authStore.userRole === 'barangay_official' ? 'Pending' : '';
+  fetchList();
+};
+
 const severityLabel = (pct: number): string => {
   if (pct < 30) return 'Low';
   if (pct <= 60) return 'Moderate';
@@ -417,13 +435,6 @@ const severityLabel = (pct: number): string => {
 const severityClass = (pct: number) => {
   const s = severityLabel(pct);
   return s === 'Severe' ? 'sev-severe' : s === 'Moderate' ? 'sev-mod' : 'sev-low';
-};
-
-const statusColor = (status: string) => {
-  if (status === 'Approved') return 'success';
-  if (status === 'Rejected') return 'danger';
-  if (status === 'Verified') return 'secondary';
-  return 'warning';
 };
 
 const filteredReports = computed(() =>
@@ -592,26 +603,8 @@ onMounted(async () => {
   font-size: 0.85rem;
   min-width: 900px;
 }
-.ledger-table thead th {
-  background: #1a4731;
-  color: white;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.4px;
-  padding: 0.85rem 0.75rem;
-  text-align: left;
-  white-space: nowrap;
-}
-.ledger-table tbody td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-  vertical-align: middle;
-}
-.ledger-table tbody tr:nth-child(even) td { background: #f8fafc; }
-.ledger-table tbody tr:hover td { background: #eef7f0; }
-.empty-row { text-align: center; color: #94a3b8; padding: 2rem !important; }
+.ledger-table tbody tr:nth-child(even) td { background: #fafbfa; }
+.ledger-table tbody tr:hover td { background: #f3f4f6 !important; }
 .ta-center { text-align: center; }
 .font-bold { font-weight: 700; color: #0f172a; }
 .nowrap { white-space: nowrap; }
@@ -696,16 +689,6 @@ onMounted(async () => {
   color: #64748b;
   font-weight: 600;
   padding: 1rem;
-}
-
-.print-only { display: none; }
-
-@media print {
-  .no-print { display: none !important; }
-  ion-header { display: none !important; }
-  .validation-bg { --background: white; }
-  .wrapper { display: none; }
-  .print-only { display: block !important; }
 }
 
 @media (max-width: 640px) {

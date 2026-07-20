@@ -1,0 +1,394 @@
+<template>
+  <ion-page>
+    <ion-header class="no-print">
+      <ion-toolbar color="primary">
+        <ion-buttons slot="start">
+          <ion-menu-button></ion-menu-button>
+        </ion-buttons>
+        <ion-title>Pest &amp; Disease Monitoring Log</ion-title>
+        <ion-buttons slot="end">
+          <ion-button class="export-btn no-print" :disabled="!entries.length" @click="exportForm">
+            <ion-icon slot="start" :icon="printOutline"></ion-icon>
+            Export Official Form
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding page-bg">
+      <div class="wrapper no-print">
+        <div v-if="!assignedBarangay" class="warn-banner">
+          No assigned barangay on this account. Ask MAO admin to set <code>assigned_barangay</code> before encoding.
+        </div>
+
+        <ion-select
+          class="field crop-field"
+          label="Crop (print header)"
+          label-placement="stacked"
+          interface="popover"
+          :value="crop"
+          @ionChange="(e: any) => crop = e.detail.value"
+        >
+          <ion-select-option value="Corn">Corn</ion-select-option>
+          <ion-select-option value="Rice">Rice</ion-select-option>
+        </ion-select>
+
+        <div class="form-card">
+          <h3>Encode Inspection</h3>
+
+          <div class="search-box">
+            <ion-input
+              class="field"
+              label="Search Farmer (RSBSA / Name)"
+              label-placement="stacked"
+              :value="farmerSearch.query.value"
+              :disabled="!assignedBarangay"
+              placeholder="Type to search…"
+              @ionInput="(e: any) => farmerSearch.onQueryInput(e.detail.value || '')"
+            ></ion-input>
+            <div v-if="farmerSearch.searching.value" class="hint">Searching…</div>
+            <ul v-if="farmerSearch.results.value.length" class="suggest">
+              <li v-for="f in farmerSearch.results.value" :key="f.id" @click="onSelectFarmer(f)">
+                <strong>{{ f.surname }}, {{ f.first_name }}</strong>
+                <span>{{ f.rsbsa_no }} · {{ f.barangay }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="demo-grid" v-if="farmerSearch.selected.value">
+            <div class="ro"><span class="lbl">RSBSA</span><span>{{ form.rsbsa_no }}</span></div>
+            <div class="ro"><span class="lbl">Last Name</span><span>{{ form.surname }}</span></div>
+            <div class="ro"><span class="lbl">First Name</span><span>{{ form.first_name }}</span></div>
+            <div class="ro"><span class="lbl">Middle Name</span><span>{{ form.middle_name || '—' }}</span></div>
+            <div class="ro"><span class="lbl">Ext</span><span>{{ form.ext_name || '—' }}</span></div>
+            <div class="ro"><span class="lbl">Birthday</span><span>{{ form.birthdate_display || '—' }}</span></div>
+            <div class="ro full"><span class="lbl">Farmer Address</span><span>{{ form.farmer_address }}</span></div>
+          </div>
+
+          <div class="input-grid">
+            <ion-select
+              class="field"
+              label="Farm Location / Plot"
+              label-placement="stacked"
+              interface="popover"
+              :value="form.plot_id"
+              :disabled="!farmerSearch.selected.value"
+              @ionChange="onPlotChange"
+            >
+              <ion-select-option value="">Select plot</ion-select-option>
+              <ion-select-option
+                v-for="p in farmerSearch.selected.value?.plots || []"
+                :key="p.id"
+                :value="p.id"
+              >
+                {{ p.location_brgy || 'Plot' }} · {{ p.commodity }} · {{ p.size_ha }} ha
+              </ion-select-option>
+            </ion-select>
+            <ion-input class="field" type="number" label="Area Planted (ha)" label-placement="stacked" :value="form.area_planted" @ionInput="(e: any) => form.area_planted = e.detail.value"></ion-input>
+            <ion-input class="field" label="Variety" label-placement="stacked" :value="form.variety" @ionInput="(e: any) => form.variety = e.detail.value"></ion-input>
+            <ion-input class="field" type="number" label="Days After Planting" label-placement="stacked" :value="form.days_after_planting" @ionInput="(e: any) => form.days_after_planting = e.detail.value"></ion-input>
+            <ion-input class="field" type="number" label="Area Damaged (%)" label-placement="stacked" :value="form.area_damage_pct" @ionInput="(e: any) => form.area_damage_pct = e.detail.value"></ion-input>
+            <ion-input class="field grow" label="Damage by Pest/Disease" label-placement="stacked" :value="form.damage_by" @ionInput="(e: any) => form.damage_by = e.detail.value"></ion-input>
+            <ion-input class="field" type="date" label="Date of Inspection" label-placement="stacked" :value="form.date_of_inspection" @ionInput="(e: any) => form.date_of_inspection = e.detail.value"></ion-input>
+            <div class="field photo-field">
+              <label class="photo-lbl">Photo Evidence (optional)</label>
+              <input type="file" accept="image/*" @change="onPhoto" />
+              <img v-if="form.photo_preview" :src="form.photo_preview" alt="Evidence" class="photo-prev" />
+            </div>
+          </div>
+
+          <ion-button expand="block" class="add-btn" :disabled="!canAdd" @click="addEntry">
+            Add to Ledger
+          </ion-button>
+        </div>
+
+        <div class="table-card">
+          <h3>Encoded Inspections ({{ entries.length }})</h3>
+          <div v-if="entries.length" class="table-wrap">
+            <table class="mao-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Farmer</th>
+                  <th>Variety</th>
+                  <th>DAP</th>
+                  <th>Damage %</th>
+                  <th>Pest/Disease</th>
+                  <th>Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(e, i) in entries" :key="e.id">
+                  <td>{{ i + 1 }}</td>
+                  <td><strong>{{ e.surname }}, {{ e.first_name }}</strong></td>
+                  <td>{{ e.variety }}</td>
+                  <td>{{ e.days_after_planting }}</td>
+                  <td>{{ e.area_damage_pct }}%</td>
+                  <td>{{ e.damage_by }}</td>
+                  <td>{{ e.date_of_inspection }}</td>
+                  <td>
+                    <ion-button size="small" fill="clear" color="danger" @click="removeEntry(i)">Remove</ion-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <EmptyState
+            v-else
+            variant="documents"
+            message="No pest inspections found. Search a farmer and log an inspection."
+          />
+        </div>
+      </div>
+
+      <div class="print-only print-document">
+        <PestMonitoringPrint
+          v-if="printRows.length"
+          :rows="printRows"
+          :barangay="assignedBarangay || ''"
+          :crop="crop"
+        />
+      </div>
+    </ion-content>
+  </ion-page>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed } from 'vue';
+import {
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
+  IonButton, IonIcon, IonInput, IonSelect, IonSelectOption, toastController,
+} from '@ionic/vue';
+import { printOutline } from 'ionicons/icons';
+import { useAuthStore } from '@/stores/authStore';
+import {
+  useBarangayFarmerSearch,
+  formatBirthday,
+  type FarmerOption,
+} from '@/composables/useBarangayFarmerSearch';
+import PestMonitoringPrint from '@/components/PestMonitoringPrint.vue';
+import EmptyState from '@/components/EmptyState.vue';
+
+interface PestEntry {
+  id: string;
+  rsbsa_no: string;
+  surname: string;
+  first_name: string;
+  middle_name: string;
+  ext_name: string;
+  birthdate_display: string;
+  farmer_address: string;
+  farm_location: string;
+  area_planted: number;
+  variety: string;
+  days_after_planting: number;
+  area_damage_pct: number;
+  damage_by: string;
+  date_of_inspection: string;
+  photo_preview: string | null;
+}
+
+const authStore = useAuthStore();
+const assignedBarangay = computed(() => authStore.user?.assigned_barangay || null);
+const farmerSearch = useBarangayFarmerSearch(() => assignedBarangay.value);
+
+const crop = ref('Corn');
+const entries = ref<PestEntry[]>([]);
+const printRows = ref<any[]>([]);
+
+const form = reactive({
+  farmer_id: '',
+  rsbsa_no: '',
+  surname: '',
+  first_name: '',
+  middle_name: '',
+  ext_name: '',
+  birthdate: '',
+  birthdate_display: '',
+  farmer_address: '',
+  plot_id: '',
+  farm_location: '',
+  area_planted: '',
+  variety: '',
+  days_after_planting: '',
+  area_damage_pct: '',
+  damage_by: '',
+  date_of_inspection: '',
+  photo_preview: null as string | null,
+});
+
+const canAdd = computed(() =>
+  !!form.farmer_id
+  && !!form.area_planted
+  && !!form.days_after_planting
+  && form.area_damage_pct !== ''
+  && !!form.damage_by
+  && !!form.date_of_inspection
+);
+
+const onSelectFarmer = async (f: FarmerOption) => {
+  await farmerSearch.selectFarmer(f);
+  const sel = farmerSearch.selected.value;
+  if (!sel) return;
+  form.farmer_id = sel.id;
+  form.rsbsa_no = sel.rsbsa_no;
+  form.surname = sel.surname;
+  form.first_name = sel.first_name;
+  form.middle_name = sel.middle_name;
+  form.ext_name = sel.ext_name;
+  form.birthdate = sel.birthdate;
+  form.birthdate_display = formatBirthday(sel.birthdate);
+  form.farmer_address = sel.address;
+  form.plot_id = '';
+  form.farm_location = sel.barangay;
+  form.area_planted = '';
+  if (sel.plots.length === 1) {
+    form.plot_id = sel.plots[0].id;
+    form.farm_location = sel.plots[0].location_brgy || sel.barangay;
+    form.area_planted = String(sel.plots[0].size_ha || '');
+    if (sel.plots[0].commodity === 'Corn' || sel.plots[0].commodity === 'Rice') {
+      crop.value = sel.plots[0].commodity;
+    }
+  }
+};
+
+const onPlotChange = (e: any) => {
+  form.plot_id = e.detail.value;
+  const p = farmerSearch.selected.value?.plots.find((x) => x.id === form.plot_id);
+  if (p) {
+    form.farm_location = p.location_brgy || form.farm_location;
+    form.area_planted = String(p.size_ha || form.area_planted);
+    if (p.commodity === 'Corn' || p.commodity === 'Rice') crop.value = p.commodity;
+  }
+};
+
+const onPhoto = (ev: Event) => {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) {
+    form.photo_preview = null;
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    form.photo_preview = String(reader.result || null);
+  };
+  reader.readAsDataURL(file);
+};
+
+const resetForm = () => {
+  farmerSearch.clearSelection();
+  form.farmer_id = '';
+  form.rsbsa_no = '';
+  form.surname = '';
+  form.first_name = '';
+  form.middle_name = '';
+  form.ext_name = '';
+  form.birthdate = '';
+  form.birthdate_display = '';
+  form.farmer_address = '';
+  form.plot_id = '';
+  form.farm_location = '';
+  form.area_planted = '';
+  form.variety = '';
+  form.days_after_planting = '';
+  form.area_damage_pct = '';
+  form.damage_by = '';
+  form.date_of_inspection = '';
+  form.photo_preview = null;
+};
+
+const addEntry = async () => {
+  if (!canAdd.value) return;
+  entries.value.push({
+    id: crypto.randomUUID(),
+    rsbsa_no: form.rsbsa_no,
+    surname: form.surname,
+    first_name: form.first_name,
+    middle_name: form.middle_name,
+    ext_name: form.ext_name,
+    birthdate_display: form.birthdate_display,
+    farmer_address: form.farmer_address,
+    farm_location: form.farm_location,
+    area_planted: Number(form.area_planted),
+    variety: form.variety,
+    days_after_planting: Number(form.days_after_planting),
+    area_damage_pct: Number(form.area_damage_pct),
+    damage_by: form.damage_by,
+    date_of_inspection: form.date_of_inspection,
+    photo_preview: form.photo_preview,
+  });
+  resetForm();
+  const t = await toastController.create({ message: 'Inspection added.', color: 'success', duration: 1800, position: 'top' });
+  await t.present();
+};
+
+const removeEntry = (i: number) => {
+  entries.value.splice(i, 1);
+};
+
+const exportForm = async () => {
+  if (!entries.value.length) return;
+  printRows.value = entries.value.map((e) => ({
+    rsbsa_no: e.rsbsa_no,
+    surname: e.surname,
+    first_name: e.first_name,
+    middle_name: e.middle_name,
+    ext_name: e.ext_name,
+    birthdate: e.birthdate_display,
+    farmer_address: e.farmer_address,
+    farm_location: e.farm_location,
+    area_planted: Number(e.area_planted).toFixed(2),
+    days_after_planting: e.days_after_planting,
+    variety: e.variety,
+    area_damage_pct: e.area_damage_pct,
+    damage_by: e.damage_by,
+  }));
+  setTimeout(() => window.print(), 350);
+};
+</script>
+
+<style scoped>
+.page-bg { --background: #f4f8f5; }
+.wrapper { max-width: 1100px; margin: 0 auto; padding-bottom: 2rem; }
+.export-btn { --background: #d4af37; --color: #1a4731; font-weight: 700; text-transform: none; }
+.warn-banner {
+  background: #fff8e1; color: #92400e; border: 1px solid #fcd34d;
+  border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.88rem;
+}
+.crop-field { margin-bottom: 1rem; max-width: 240px; }
+.field {
+  flex: 1; min-width: 140px;
+  --background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 10px;
+}
+.field.grow { flex: 2; min-width: 200px; }
+.form-card, .table-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 1rem; margin-bottom: 1rem;
+}
+.form-card h3, .table-card h3 { margin: 0 0 0.75rem; color: #1a4731; font-weight: 800; }
+.search-box { position: relative; margin-bottom: 0.75rem; }
+.hint { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+.suggest {
+  list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid #e2e8f0;
+  border-radius: 8px; background: white; max-height: 220px; overflow: auto;
+}
+.suggest li {
+  padding: 0.55rem 0.75rem; cursor: pointer; display: flex; flex-direction: column;
+  border-bottom: 1px solid #f1f5f9;
+}
+.suggest li:hover { background: #e8f5e9; }
+.suggest li span { font-size: 0.78rem; color: #64748b; }
+.demo-grid, .input-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem; }
+.ro {
+  flex: 1; min-width: 140px; background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 0.5rem 0.65rem;
+}
+.ro.full { flex: 1 1 100%; }
+.lbl { display: block; font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+.photo-field { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
+.photo-lbl { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.photo-prev { max-width: 160px; max-height: 120px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: cover; }
+.add-btn { --background: #1a4731; text-transform: none; font-weight: 700; }
+</style>

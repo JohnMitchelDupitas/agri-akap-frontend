@@ -22,6 +22,17 @@
     <ion-content class="auth-bg ion-padding">
       <div class="form-wrapper">
 
+        <div class="lgu-links">
+          <ion-button expand="block" class="lgu-btn" router-link="/tech/planting-log">
+            <ion-icon slot="start" :icon="leafOutline"></ion-icon>
+            LGU Planting Log
+          </ion-button>
+          <ion-button expand="block" fill="outline" class="lgu-btn outline" router-link="/tech/pest-validation">
+            <ion-icon slot="start" :icon="bugOutline"></ion-icon>
+            Pest &amp; Disease Validation
+          </ion-button>
+        </div>
+
         <!-- ── CROP LOG TAB ── -->
         <div v-if="activeTab === 'crop'" class="animate-fade">
           <p class="tab-desc">Record current plantings and soil health to monitor depletion risk.</p>
@@ -461,6 +472,9 @@ onMounted(() => fetchPlots());
 <style scoped>
 .auth-bg { --background: #f4f8f5; }
 .form-wrapper { max-width: 600px; margin: 0 auto; padding-top: 0.5rem; }
+.lgu-links { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.lgu-btn { text-transform: none; font-weight: 700; --background: #1a4731; margin: 0; }
+.lgu-btn.outline { --border-color: #1a4731; --color: #1a4731; }
 .tab-desc { font-size: 0.88rem; color: #64748b; margin: 0.5rem 0 1rem; }
 .form-card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; margin: 0; }
 .border-danger { border-top: 4px solid #c0392b; }

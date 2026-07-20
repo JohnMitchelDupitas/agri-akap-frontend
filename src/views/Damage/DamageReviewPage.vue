@@ -21,10 +21,12 @@
       <div class="wrapper">
         <div v-if="isLoading" class="ion-text-center"><ion-spinner name="crescent"></ion-spinner></div>
 
-        <div v-else-if="!items.length" class="empty-state">
-          <ion-icon :icon="fileTrayOutline"></ion-icon>
-          <p>No {{ statusFilter.toLowerCase() }} assessments.</p>
-        </div>
+        <EmptyState
+          v-else-if="!items.length"
+          variant="documents"
+          :title="`No ${statusFilter.toLowerCase()} assessments`"
+          :message="`No ${statusFilter.toLowerCase()} damage reports found.`"
+        />
 
         <ion-card v-for="a in items" :key="a.id" class="review-card">
           <img v-if="a.photo_url" :src="a.photo_url" class="evidence-img" alt="Damage evidence" />
@@ -34,7 +36,7 @@
                 <h2 class="calamity">{{ a.calamity_name }}</h2>
                 <p class="farmer">{{ a.farmer?.first_name }} {{ a.farmer?.surname }} &middot; {{ a.farmer?.permanent_brgy }}</p>
               </div>
-              <ion-badge :color="statusColor(a.status)">{{ a.status }}</ion-badge>
+              <StatusBadge :status="a.status" />
             </div>
 
             <ion-grid class="meta-grid">
@@ -92,22 +94,24 @@
 import { ref, computed, onMounted } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
-  IonSegment, IonSegmentButton, IonLabel, IonCard, IonCardContent, IonBadge,
+  IonSegment, IonSegmentButton, IonLabel, IonCard, IonCardContent,
   IonGrid, IonRow, IonCol, IonButton, IonIcon, IonSpinner, alertController, toastController,
 } from '@ionic/vue';
 import {
   shieldCheckmarkOutline, checkmarkCircleOutline, closeCircleOutline,
-  locationOutline, fileTrayOutline,
+  locationOutline,
 } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import apiClient from '@/utils/axios';
 import { useAuthStore } from '@/stores/authStore';
+import StatusBadge from '@/components/StatusBadge.vue';
+import EmptyState from '@/components/EmptyState.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
 
 const viewOnMap = (a: any) => {
-  const mapPath = authStore.userRole === 'barangay_official' ? '/review/map' : '/admin/map';
+  const mapPath = authStore.userRole === 'barangay_official' ? '/brgy/map' : '/admin/map';
   router.push({ path: mapPath, query: { lat: a.latitude, lng: a.longitude } });
 };
 const items = ref<any[]>([]);
@@ -172,9 +176,6 @@ const decide = async (a: any, decision: 'Approved' | 'Rejected') => {
   }
 };
 
-const statusColor = (s: string) =>
-  s === 'Approved' ? 'success' : s === 'Rejected' ? 'danger' : s === 'Verified' ? 'secondary' : 'warning';
-
 const formatMoney = (v: any) => (v ? Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00');
 const formatDate = (d: string) => (d ? new Date(d).toLocaleDateString() : '-');
 
@@ -186,7 +187,7 @@ onMounted(fetchList);
 .wrapper { max-width: 720px; margin: 0 auto; }
 .review-card { border-radius: 14px; overflow: hidden; margin: 0 0 1rem; }
 .evidence-img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
-.head-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
 .calamity { color: #c0392b; font-weight: 800; margin: 0; font-size: 1.15rem; }
 .farmer { color: #334155; margin: 2px 0 0; font-weight: 600; font-size: 0.9rem; }
 .meta-grid { margin-top: 0.6rem; }
@@ -197,6 +198,4 @@ onMounted(fetchList);
 .decision-row { display: flex; gap: 0.6rem; }
 .decision-row ion-button { flex: 1; }
 .mt-2 { margin-top: 0.75rem; }
-.empty-state { text-align: center; color: #94a3b8; margin-top: 3rem; }
-.empty-state ion-icon { font-size: 3.5rem; }
 </style>

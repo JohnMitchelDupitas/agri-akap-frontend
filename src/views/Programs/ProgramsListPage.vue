@@ -14,29 +14,31 @@
         
         <div class="header-actions">
           <h2>Active Campaigns</h2>
-          <ion-button @click="isModalOpen = true" color="success">
+          <ion-button @click="isModalOpen = true" color="primary">
             + New Program
           </ion-button>
         </div>
 
         <div v-if="isLoading" class="text-center mt-4">
-          <ion-spinner name="crescent"></ion-spinner>
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
           <p>Loading programs...</p>
         </div>
 
-        <div v-else-if="programs.length === 0" class="empty-state">
-          <h3>No Active Programs</h3>
-          <p>Click the button above to initialize a new distribution campaign.</p>
-        </div>
+        <EmptyState
+          v-else-if="programs.length === 0"
+          variant="inventory"
+          title="No Active Programs"
+          message="No programs found. Create a distribution campaign to get started."
+          action-label="+ New Program"
+          @action="isModalOpen = true"
+        />
 
         <div class="programs-grid" v-else>
           <ion-card v-for="program in programs" :key="program.id" class="program-card">
             <ion-card-header>
               <div class="card-title-row">
                 <ion-card-title class="program-title">{{ program.name }}</ion-card-title>
-                <ion-badge :color="program.is_active ? 'success' : 'medium'">
-                  {{ program.is_active ? 'Active' : 'Closed' }}
-                </ion-badge>
+                <StatusBadge :status="program.is_active ? 'Active' : 'Closed'" />
               </div>
               <ion-card-subtitle class="text-capitalize">{{ program.type }} Subsidy</ion-card-subtitle>
             </ion-card-header>
@@ -94,11 +96,13 @@ import { ref, onMounted } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent,
-  IonBadge, IonSpinner, toastController, alertController,
+  IonSpinner, toastController, alertController,
 } from '@ionic/vue';
 import axiosInstance from '@/utils/axios';
 import { useAuthStore } from '@/stores/authStore';
 import CreateProgramModal from './CreateProgramModal.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import EmptyState from '@/components/EmptyState.vue';
 
 const programs = ref<any[]>([]);
 const isLoading = ref(true);
@@ -171,8 +175,6 @@ onMounted(() => {
 .dashboard-container { max-width: 900px; margin: 0 auto; padding-top: 1rem; }
 .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .header-actions h2 { font-weight: 800; color: #1a4731; margin: 0; }
-
-.empty-state { text-align: center; padding: 3rem 1rem; color: #666; background: white; border-radius: 8px; border: 1px dashed #ccc; }
 
 .programs-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 768px) { .programs-grid { grid-template-columns: 1fr 1fr; } }

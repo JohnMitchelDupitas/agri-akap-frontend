@@ -1,13 +1,13 @@
 <template>
   <ion-page>
-    <ion-split-pane content-id="review-content" when="md" class="responsive-split">
-      <ion-menu content-id="review-content" type="overlay">
+    <ion-split-pane content-id="brgy-content" when="md" class="responsive-split">
+      <ion-menu content-id="brgy-content" type="overlay">
         <ion-header>
           <ion-toolbar color="primary">
             <ion-title>
               <div class="brand">
                 <span class="brand-name">AGRI-AKAP</span>
-                <span class="brand-sub">Barangay Review</span>
+                <span class="brand-sub">Barangay Portal</span>
               </div>
             </ion-title>
           </ion-toolbar>
@@ -22,6 +22,7 @@
                 lines="none"
                 :detail="false"
                 class="sidebar-item"
+                :class="{ active: isActive(p.url) }"
               >
                 <ion-icon slot="start" :icon="p.icon" class="sidebar-icon"></ion-icon>
                 <ion-label class="menu-label">{{ p.title }}</ion-label>
@@ -38,25 +39,33 @@
         </ion-content>
       </ion-menu>
 
-      <ion-router-outlet id="review-content" />
+      <ion-router-outlet id="brgy-content" />
     </ion-split-pane>
   </ion-page>
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
 import {
   IonPage, IonContent, IonIcon, IonItem, IonLabel, IonList, IonMenu, IonMenuToggle,
   IonTitle, IonToolbar, IonHeader, IonRouterOutlet, IonSplitPane,
 } from '@ionic/vue';
-import { shieldCheckmarkOutline, mapOutline, logOutOutline } from 'ionicons/icons';
+import {
+  homeOutline, leafOutline, bugOutline, shieldCheckmarkOutline, logOutOutline,
+} from 'ionicons/icons';
 import { useAuthStore } from '@/stores/authStore';
 
 const authStore = useAuthStore();
+const route = useRoute();
 
 const pages = [
-  { title: 'Damage Review', url: '/review/damage-review', icon: shieldCheckmarkOutline },
-  { title: 'GIS Map', url: '/review/map', icon: mapOutline },
+  { title: 'Barangay Dashboard', url: '/brgy/dashboard', icon: homeOutline },
+  { title: 'Master Seasonal Planting Log', url: '/brgy/planting-ledger', icon: leafOutline },
+  { title: 'Pest & Disease Monitoring Log', url: '/brgy/pest-monitoring', icon: bugOutline },
+  { title: 'Damage Review', url: '/brgy/damage-review', icon: shieldCheckmarkOutline },
 ];
+
+const isActive = (url: string) => route.path === url || route.path.startsWith(url + '/');
 
 const handleLogout = () => authStore.logout();
 </script>
@@ -64,22 +73,30 @@ const handleLogout = () => authStore.logout();
 <style scoped>
 .brand { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name { font-weight: 800; font-size: 1.05rem; letter-spacing: 0.02em; }
-.brand-sub { font-size: 0.68rem; font-weight: 500; opacity: 0.8; }
+.brand-sub { font-size: 0.68rem; font-weight: 500; opacity: 0.85; color: #d4af37; }
 
+ion-menu { --background: #ffffff; }
 ion-content { --background: #ffffff; }
-.sidebar-item { --background: #ffffff; --border-radius: 10px; margin: 2px 10px; --min-height: 46px; }
-.sidebar-item.router-link-active {
-  --background: rgba(26, 71, 49, 0.08);
+
+.sidebar-item {
+  --background: #ffffff;
+  --border-radius: 10px;
+  margin: 2px 10px;
+  --min-height: 46px;
+}
+.sidebar-item.active {
+  --background: #e8f5e9;
   border-left: 3px solid #d4af37;
 }
-.sidebar-item.router-link-active .sidebar-icon,
-.sidebar-item.router-link-active .menu-label {
+.sidebar-item.active .sidebar-icon,
+.sidebar-item.active .menu-label {
   color: #1a4731;
   font-weight: 700;
 }
-.sidebar-icon { color: var(--mao-text-muted); font-size: 20px; }
-.menu-label { font-size: 0.9rem; font-weight: 500; color: var(--mao-text); }
-.logout .sidebar-icon, .logout .menu-label { color: var(--ion-color-danger); }
+.sidebar-icon { color: var(--mao-text-muted, #64748b); font-size: 20px; }
+.menu-label { font-size: 0.88rem; font-weight: 500; color: var(--mao-text, #1e293b); }
+.logout .sidebar-icon,
+.logout .menu-label { color: var(--ion-color-danger); }
 
 @media (max-width: 700px) {
   ion-menu { --width: 56px !important; --max-width: 56px !important; --border: none !important; border-right: none !important; }

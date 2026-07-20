@@ -27,10 +27,12 @@
           <p>Loading stock levels…</p>
         </div>
 
-        <div v-else-if="!programs.length" class="empty-state">
-          <ion-icon :icon="cubeOutline"></ion-icon>
-          <p>No programs found. Create a program to begin tracking stock.</p>
-        </div>
+        <EmptyState
+          v-else-if="!programs.length"
+          variant="inventory"
+          title="No programs found"
+          message="No programs found. Create a program to begin tracking stock."
+        />
 
         <div v-else class="stock-grid">
           <ion-card v-for="p in programs" :key="p.id" class="stock-card">
@@ -179,10 +181,11 @@ import {
   toastController,
 } from '@ionic/vue';
 import {
-  refreshOutline, cubeOutline, alertCircleOutline, addCircleOutline,
+  refreshOutline, alertCircleOutline, addCircleOutline,
   settingsOutline, saveOutline,
 } from 'ionicons/icons';
 import apiClient from '@/utils/axios';
+import EmptyState from '@/components/EmptyState.vue';
 
 const programs = ref<any[]>([]);
 const barangays = ref<string[]>([]);
@@ -296,8 +299,7 @@ const submitSettings = async () => {
 .page-intro h2 { color: #1a4731; font-weight: 800; margin: 0 0 4px; }
 .page-intro p { color: #64748b; font-size: 0.9rem; margin: 0; max-width: 640px; }
 
-.loading-state, .empty-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
-.empty-state ion-icon { font-size: 3rem; color: #cbd5e1; margin-bottom: 0.5rem; }
+.loading-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
 
 .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 .stock-card { border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin: 0; }

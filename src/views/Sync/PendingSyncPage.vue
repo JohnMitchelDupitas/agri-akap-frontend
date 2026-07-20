@@ -54,7 +54,7 @@
           <ion-card-content>
             <div class="item-head">
               <strong>{{ d.farmer_name || 'Farmer' }}</strong>
-              <ion-badge :color="statusColor(d.status)">{{ d.status }}</ion-badge>
+              <StatusBadge :status="d.status" />
             </div>
             <p class="item-sub">{{ d.program_name || d.program_id }}</p>
             <p class="item-meta">Queued {{ formatDate(d.created_at) }}</p>
@@ -70,7 +70,7 @@
           <ion-card-content>
             <div class="item-head">
               <strong>{{ a.calamity_name }}</strong>
-              <ion-badge :color="statusColor(a.status)">{{ a.status }}</ion-badge>
+              <StatusBadge :status="a.status" />
             </div>
             <p class="item-sub">{{ a.farmer_name || 'Plot ' + a.farm_plot_id.substring(0, 6) }} &middot; {{ a.damage_percentage }}% damage</p>
             <p class="item-meta">Queued {{ formatDate(a.created_at) }}</p>
@@ -81,10 +81,12 @@
           </ion-card-content>
         </ion-card>
 
-        <div v-if="syncStore.pending === 0" class="empty-state">
-          <ion-icon :icon="checkmarkDoneCircleOutline"></ion-icon>
-          <p>All records are synced. Nothing pending.</p>
-        </div>
+        <EmptyState
+          v-if="syncStore.pending === 0"
+          variant="sync"
+          title="All clear"
+          message="All records are synced. Nothing pending."
+        />
       </div>
 
       <div class="wrapper" v-else>
@@ -133,9 +135,11 @@
             </ion-card-content>
           </ion-card>
 
-          <div v-if="!contribData.recent?.length" class="empty-state">
-            <p>No contributions recorded for this period.</p>
-          </div>
+          <EmptyState
+            v-if="!contribData.recent?.length"
+            variant="documents"
+            message="No contributions recorded for this period."
+          />
         </template>
 
         <div v-if="contribError" class="offline-note">{{ contribError }}</div>
@@ -152,11 +156,13 @@ import {
   IonSegment, IonSegmentButton, IonInput, IonSpinner,
 } from '@ionic/vue';
 import {
-  syncOutline, trashOutline, cloudDoneOutline, cloudOfflineOutline, checkmarkDoneCircleOutline,
+  syncOutline, trashOutline, cloudDoneOutline, cloudOfflineOutline,
 } from 'ionicons/icons';
-import { db, type PendingDistribution, type PendingAssessment, type QueueStatus } from '@/services/db';
+import { db, type PendingDistribution, type PendingAssessment } from '@/services/db';
 import { useSyncStore } from '@/stores/syncStore';
 import axiosInstance from '@/utils/axios';
+import StatusBadge from '@/components/StatusBadge.vue';
+import EmptyState from '@/components/EmptyState.vue';
 
 const syncStore = useSyncStore();
 const distributions = ref<PendingDistribution[]>([]);
@@ -196,9 +202,6 @@ const removeAssessment = async (id: string) => {
   await db.pendingAssessments.delete(id);
   await load();
 };
-
-const statusColor = (s: QueueStatus) =>
-  s === 'failed' ? 'danger' : s === 'syncing' ? 'warning' : 'medium';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleString();
 
@@ -252,8 +255,6 @@ onUnmounted(() => timer && clearInterval(timer));
 .item-sub { margin: 4px 0 0; color: #334155; font-weight: 600; }
 .item-meta { margin: 2px 0 0; color: #94a3b8; font-size: 0.8rem; }
 .item-error { color: var(--ion-color-danger); font-size: 0.85rem; margin: 6px 0 0; }
-.empty-state { text-align: center; color: #94a3b8; margin-top: 3rem; }
-.empty-state ion-icon { font-size: 3.5rem; color: var(--ion-color-success); }
 .contrib-title { font-weight: 800; color: #1a4731; margin: 0 0 0.5rem; }
 .period-row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
 .period-row ion-input { flex: 1; min-width: 120px; --background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 8px; }

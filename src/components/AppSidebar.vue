@@ -141,13 +141,14 @@ ion-content {
 
 .selected {
   --background: rgba(26, 71, 49, 0.08);
+  border-left: 3px solid var(--mao-gold);
 }
 .selected .menu-label {
   font-weight: 700;
   color: var(--mao-green);
 }
 .selected .sidebar-icon {
-  color: var(--ion-color-primary);
+  color: var(--mao-green);
 }
 
 @media (max-width: 700px) {

@@ -151,7 +151,7 @@
               </ion-button>
             </div>
 
-            <div class="table-responsive">
+            <div v-if="stats.audit_trail?.length" class="table-responsive">
               <table class="mao-table">
                 <thead>
                   <tr>
@@ -164,9 +164,6 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-if="!stats.audit_trail?.length">
-                    <td colspan="6" class="text-center py-4 text-muted">No distributions recorded yet.</td>
-                  </tr>
                   <tr v-for="log in stats.audit_trail" :key="log.id">
                     <td class="font-medium nowrap">{{ log.date }}</td>
                     <td class="font-bold">{{ log.farmer_name }}</td>
@@ -178,6 +175,11 @@
                 </tbody>
               </table>
             </div>
+            <EmptyState
+              v-else
+              variant="documents"
+              message="No distributions recorded yet."
+            />
           </div>
         </template>
 
@@ -203,6 +205,7 @@ import {
   bugOutline, documentTextOutline, alertCircleOutline,
 } from 'ionicons/icons';
 import axiosInstance from '@/utils/axios';
+import EmptyState from '@/components/EmptyState.vue';
 
 const router = useRouter();
 const stats = ref<any>(null);
@@ -268,7 +271,7 @@ onMounted(fetchStats);
 .mao-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
 .mao-table th { padding: 0.85rem 1.2rem; background: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; }
 .mao-table td { padding: 0.85rem 1.2rem; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-.mao-table tr:hover td { background: #f8fafc; }
+.mao-table tr:hover td { background: #f3f4f6; }
 .mao-table tr:last-child td { border-bottom: none; }
 .font-bold { font-weight: 700; color: #0f172a; }
 .font-medium { font-weight: 500; }

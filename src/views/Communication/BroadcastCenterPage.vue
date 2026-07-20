@@ -103,13 +103,18 @@
                 <ion-card-content class="ion-no-padding">
                   <ion-list lines="full">
                     <div v-if="isLoadingLogs" class="text-center p-3"><ion-spinner></ion-spinner></div>
-                    <div v-else-if="!logs.length" class="text-center p-3 text-muted">No broadcasts sent yet.</div>
+                    <div v-else-if="!logs.length">
+                      <EmptyState
+                        variant="documents"
+                        message="No broadcasts found. Compose a message to reach farmers."
+                      />
+                    </div>
                     <ion-item v-for="log in logs" :key="log.id">
                       <ion-label>
                         <h3 class="log-title">{{ log.target_barangay }} · {{ log.target_commodity }}</h3>
                         <p class="text-truncate">{{ log.message_body }}</p>
                         <p class="log-meta">
-                          <ion-badge :color="log.status === 'Success' ? 'success' : 'danger'">{{ log.status }}</ion-badge>
+                          <StatusBadge :status="log.status" />
                           <span>{{ log.recipient_count }} Recipients</span>
                         </p>
                       </ion-label>
@@ -144,11 +149,13 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
   IonItem, IonTextarea, IonSelect, IonSelectOption, IonButton, IonIcon,
-  IonList, IonLabel, IonBadge, IonSpinner, IonAlert,
+  IonList, IonLabel, IonSpinner, IonAlert,
   toastController,
 } from '@ionic/vue';
 import { sendOutline, radioOutline } from 'ionicons/icons';
 import axiosInstance from '@/utils/axios';
+import EmptyState from '@/components/EmptyState.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 
 const form = ref({ message: '', target_barangay: 'All', target_commodity: 'All' });
 const isSending = ref(false);

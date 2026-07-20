@@ -6,28 +6,22 @@
       <ion-tab-bar slot="bottom" class="tech-tabbar">
         <ion-tab-button tab="scanner" href="/tech/scanner">
           <ion-icon :icon="qrCodeOutline" />
-          <ion-label>Scan</ion-label>
+          <ion-label>QR Scan</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="field" href="/tech/field">
           <ion-icon :icon="leafOutline" />
-          <ion-label>Field Log</ion-label>
+          <ion-label>Field Intel</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="damage" href="/tech/damage">
-          <ion-icon :icon="warningOutline" />
-          <ion-label>Damage</ion-label>
+        <ion-tab-button tab="profiling" href="/tech/farm-profiling">
+          <ion-icon :icon="mapOutline" />
+          <ion-label>Farm Profile</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="sync" href="/tech/sync">
-          <ion-icon :icon="cloudUploadOutline" />
-          <ion-label>Sync</ion-label>
-          <ion-badge v-if="syncStore.pending > 0" color="warning">{{ syncStore.pending }}</ion-badge>
-        </ion-tab-button>
-
-        <ion-tab-button tab="home" href="/tech/home">
-          <ion-icon :icon="gridOutline" />
-          <ion-label>More</ion-label>
+        <ion-tab-button tab="extension" href="/tech/extension">
+          <ion-icon :icon="peopleOutline" />
+          <ion-label>Extension</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
@@ -37,14 +31,11 @@
 <script setup lang="ts">
 import {
   IonPage, IonTabs, IonTabBar, IonTabButton, IonRouterOutlet,
-  IonIcon, IonLabel, IonBadge,
+  IonIcon, IonLabel,
 } from '@ionic/vue';
 import {
-  qrCodeOutline, leafOutline, warningOutline, cloudUploadOutline, gridOutline,
+  qrCodeOutline, leafOutline, mapOutline, peopleOutline,
 } from 'ionicons/icons';
-import { useSyncStore } from '@/stores/syncStore';
-
-const syncStore = useSyncStore();
 </script>
 
 <style scoped>
@@ -58,6 +49,20 @@ ion-tab-button {
   --color: var(--mao-text-muted);
   --color-selected: var(--mao-green);
   font-weight: 600;
+  position: relative;
+}
+ion-tab-button.tab-selected {
+  --color-selected: var(--mao-green);
+}
+ion-tab-button.tab-selected::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 28%;
+  right: 28%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--mao-gold);
 }
 ion-tab-button ion-icon {
   font-size: 22px;

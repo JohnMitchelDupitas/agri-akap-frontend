@@ -7,10 +7,10 @@
         </ion-buttons>
         <ion-title>Statutory Report Compiler</ion-title>
         <ion-buttons slot="end">
-          <ion-button fill="clear" @click="previewReport" :disabled="isLoading">
+          <ion-button class="no-print" fill="clear" @click="previewReport" :disabled="isLoading">
             <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
           </ion-button>
-          <ion-button fill="clear" @click="printReport" :disabled="!report">
+          <ion-button class="no-print" fill="clear" @click="printReport" :disabled="!report">
             <ion-icon slot="icon-only" :icon="printOutline"></ion-icon>
           </ion-button>
         </ion-buttons>
@@ -132,7 +132,7 @@
         </div>
       </div>
 
-      <div class="report-wrapper" id="printable-report">
+      <div class="report-wrapper print-document" id="printable-report">
         <div v-if="isLoading" class="loading-center no-print">
           <ion-spinner name="crescent" color="primary"></ion-spinner>
           <p>Compiling report data...</p>
@@ -433,11 +433,4 @@ onMounted(async () => {
 
 .loading-center { text-align: center; padding: 3rem; }
 .error-note { background: #ffebee; color: #c0392b; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; }
-
-@media print {
-  .no-print { display: none !important; }
-  ion-header { display: none; }
-  .report-bg { --background: white; }
-  .report-wrapper { max-width: 100%; padding: 0; }
-}
 </style>

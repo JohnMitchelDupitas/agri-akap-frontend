@@ -6,7 +6,7 @@ import { useAuthStore } from "../stores/authStore";
 export const homeForRole = (role: string | null): string => {
   if (role === "admin") return "/admin/dashboard";
   if (role === "technician") return "/tech/scanner";
-  if (role === "barangay_official") return "/review/damage-review";
+  if (role === "barangay_official") return "/brgy/dashboard";
   return "/login";
 };
 
@@ -67,6 +67,11 @@ const routes: Array<RouteRecordRaw> = [
       { path: "scanner", name: "Scan", component: () => import("@/views/Scanner/ScannerPage.vue") },
       { path: "release", name: "Release", component: () => import("@/views/Scanner/ReleasePage.vue") },
       { path: "field", name: "FieldIntelligence", component: () => import("@/views/Technician/FieldIntelligencePage.vue") },
+      { path: "planting-log", name: "MobilePlantingLog", component: () => import("@/views/Technician/MobilePlantingLogView.vue") },
+      { path: "pest-validation", name: "MobilePestValidation", component: () => import("@/views/Technician/MobilePestValidationView.vue") },
+      { path: "farm-profiling", name: "FarmProfiling", component: () => import("@/views/Technician/FarmProfilingView.vue") },
+      { path: "geo-tag", name: "MobileGeoTag", component: () => import("@/views/Technician/MobileGeoTagView.vue") },
+      { path: "extension", name: "ExtensionServices", component: () => import("@/views/Technician/ExtensionServicesView.vue") },
       { path: "damage", name: "DamageAssessment", component: () => import("@/views/Technician/DamageAssessmentPage.vue") },
       { path: "sync", name: "PendingSync", component: () => import("@/views/Sync/PendingSyncPage.vue") },
       { path: "home", name: "Home", component: () => import("@/views/HomePage.vue") },
@@ -78,17 +83,25 @@ const routes: Array<RouteRecordRaw> = [
     ],
   },
 
-  // ── Barangay review environment (minimal) ─────────────────────────────────
+  // ── Barangay Portal (desktop encoding + damage review) ────────────────────
   {
-    path: "/review",
-    component: () => import("@/layouts/ReviewLayout.vue"),
+    path: "/brgy",
+    component: () => import("@/layouts/BarangayLayout.vue"),
     meta: { requiresAuth: true, role: "barangay_official" },
     children: [
-      { path: "", redirect: "/review/damage-review" },
-      { path: "damage-review", name: "ReviewDamage", component: () => import("@/views/Admin/DamageValidationView.vue") },
-      { path: "map", name: "ReviewMap", component: () => import("@/views/Map/MapPage.vue") },
+      { path: "", redirect: "/brgy/dashboard" },
+      { path: "dashboard", name: "BrgyDashboard", component: () => import("@/views/Barangay/DashboardView.vue") },
+      { path: "planting-ledger", name: "BrgyPlantingLedger", component: () => import("@/views/Barangay/PlantingLedgerView.vue") },
+      { path: "pest-monitoring", name: "BrgyPestMonitoring", component: () => import("@/views/Barangay/PestMonitoringView.vue") },
+      { path: "damage-review", name: "BrgyDamageReview", component: () => import("@/views/Admin/DamageValidationView.vue") },
+      { path: "map", name: "BrgyMap", component: () => import("@/views/Map/MapPage.vue") },
     ],
   },
+
+  // Legacy /review bookmarks → Barangay Portal
+  { path: "/review", redirect: "/brgy/dashboard" },
+  { path: "/review/damage-review", redirect: "/brgy/damage-review" },
+  { path: "/review/map", redirect: "/brgy/map" },
 
   // ── Legacy flat-path redirects (role-aware, query preserved) ──────────────
   { path: "/dashboard", redirect: "/admin/dashboard" },
@@ -111,11 +124,11 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/map",
-    redirect: legacy({ admin: "/admin/map", technician: "/tech/map", barangay_official: "/review/map" }, "/admin/map"),
+    redirect: legacy({ admin: "/admin/map", technician: "/tech/map", barangay_official: "/brgy/map" }, "/admin/map"),
   },
   {
     path: "/damage-review",
-    redirect: legacy({ admin: "/admin/damage-review", barangay_official: "/review/damage-review" }, "/admin/damage-review"),
+    redirect: legacy({ admin: "/admin/damage-review", barangay_official: "/brgy/damage-review" }, "/admin/damage-review"),
   },
   { path: "/scan", redirect: "/tech/scanner" },
   { path: "/ScanQR", redirect: "/tech/scanner" },

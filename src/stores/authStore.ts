@@ -11,6 +11,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
+  assigned_barangay?: string | null;
 }
 
 const INACTIVITY_MS = 60 * 60 * 1000; // 60 minutes — matches Sanctum token expiry

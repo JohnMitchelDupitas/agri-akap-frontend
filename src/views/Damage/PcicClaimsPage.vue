@@ -36,10 +36,12 @@
 
           <div v-if="claimsLoading" class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
 
-          <div v-else-if="!claims.length" class="empty-state">
-            <ion-icon :icon="documentTextOutline"></ion-icon>
-            <p>No {{ claimsFilter === 'unfiled' ? 'unfiled approved' : claimsFilter.toLowerCase() }} claims.</p>
-          </div>
+          <EmptyState
+            v-else-if="!claims.length"
+            variant="documents"
+            title="No claims found"
+            :message="`No ${claimsFilter === 'unfiled' ? 'unfiled approved' : claimsFilter.toLowerCase()} claims found.`"
+          />
 
           <ion-card v-for="c in claims" :key="c.id" class="claim-card">
             <img v-if="c.photo_url" :src="c.photo_url" class="evidence-thumb" alt="Evidence" />
@@ -50,9 +52,9 @@
                   <p class="sub">{{ c.farmer?.permanent_brgy }} &middot; {{ c.calamity_type || c.calamity_name }}</p>
                 </div>
                 <div class="badges">
-                  <ion-badge :color="statusColor(c.status)">{{ c.status }}</ion-badge>
+                  <StatusBadge :status="c.status" />
                   <ion-badge v-if="c.is_pcic_notice_filed" color="success">PCIC Filed</ion-badge>
-                  <ion-badge v-else-if="c.status === 'Approved'" color="warning">Awaiting Filing</ion-badge>
+                  <ion-badge v-else-if="c.status === 'Approved'" color="secondary" class="accent">Awaiting Filing</ion-badge>
                 </div>
               </div>
 
@@ -98,10 +100,14 @@
 
           <div v-if="enrollLoading" class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
 
-          <div v-else-if="!enrollments.length" class="empty-state">
-            <ion-icon :icon="shieldCheckmarkOutline"></ion-icon>
-            <p>No PCIC enrollments yet. Enroll a farmer to begin.</p>
-          </div>
+          <EmptyState
+            v-else-if="!enrollments.length"
+            variant="farmers"
+            title="No PCIC enrollments"
+            message="No PCIC enrollments found. Enroll a farmer to begin pre-calamity coverage."
+            action-label="Enroll in PCIC"
+            @action="openEnrollModal"
+          />
 
           <ion-card v-for="e in enrollments" :key="e.id" class="enroll-card">
             <ion-card-content>
@@ -110,7 +116,7 @@
                   <h3>{{ e.farmer?.first_name }} {{ e.farmer?.surname }}</h3>
                   <p class="sub">{{ e.farmer?.rsbsa_no }} &middot; {{ e.farmer?.permanent_brgy }}</p>
                 </div>
-                <ion-badge :color="e.status === 'Active' ? 'success' : e.status === 'Submitted' ? 'primary' : 'medium'">{{ e.status }}</ion-badge>
+                <StatusBadge :status="e.status" />
               </div>
               <div class="meta-grid">
                 <span><strong>Commodity:</strong> {{ e.commodity }}</span>
@@ -176,13 +182,15 @@
           <ion-toolbar color="primary">
             <ion-title>PCIC Notice of Claim</ion-title>
             <ion-buttons slot="end">
-              <ion-button @click="doPrint"><ion-icon slot="start" :icon="printOutline"></ion-icon>Print</ion-button>
-              <ion-button @click="printOpen = false">Close</ion-button>
+              <ion-button class="no-print" @click="doPrint"><ion-icon slot="start" :icon="printOutline"></ion-icon>Print</ion-button>
+              <ion-button class="no-print" @click="printOpen = false">Close</ion-button>
             </ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <PcicNoticePrint :data="printData" />
+          <div class="print-document">
+            <PcicNoticePrint :data="printData" />
+          </div>
         </ion-content>
       </ion-modal>
 
@@ -199,10 +207,12 @@ import {
   IonSelectOption, IonSearchbar, IonList, toastController, alertController,
 } from '@ionic/vue';
 import {
-  documentTextOutline, downloadOutline, personAddOutline, shieldCheckmarkOutline, printOutline,
+  downloadOutline, personAddOutline, printOutline,
 } from 'ionicons/icons';
 import apiClient from '@/utils/axios';
 import PcicNoticePrint from '@/components/PcicNoticePrint.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import EmptyState from '@/components/EmptyState.vue';
 
 const activeTab = ref<'claims' | 'enrollments'>('claims');
 const claimsFilter = ref('unfiled');
@@ -240,14 +250,6 @@ const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('en-PH') : 
 const formatMoney = (v: any) => {
   const n = Number(v);
   return isNaN(n) ? '0.00' : n.toLocaleString('en-PH', { minimumFractionDigits: 2 });
-};
-
-const statusColor = (s: string) => {
-  if (s === 'Claimed') return 'success';
-  if (s === 'Approved') return 'primary';
-  if (s === 'Verified') return 'secondary';
-  if (s === 'Rejected') return 'danger';
-  return 'warning';
 };
 
 const fetchClaims = async () => {
@@ -434,8 +436,7 @@ onMounted(fetchClaims);
 .tab-intro p { color: #64748b; font-size: 0.9rem; margin: 0; }
 .filter-row, .toolbar-row { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .toolbar-row ion-searchbar { flex: 1; min-width: 200px; --background: #fff; }
-.loading-state, .empty-state { text-align: center; padding: 2rem; color: #64748b; }
-.empty-state ion-icon { font-size: 2.5rem; color: #cbd5e1; }
+.loading-state { text-align: center; padding: 2rem; color: #64748b; }
 .claim-card, .enroll-card { border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; }
 .evidence-thumb { width: 100%; max-height: 160px; object-fit: cover; }
 .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -447,9 +448,4 @@ onMounted(fetchClaims);
 .modal-input { --background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 0.8rem; }
 .selected-farmer { font-size: 0.9rem; color: #1a4731; margin: 8px 0; }
 .mt-3 { margin-top: 1rem; }
-
-@media print {
-  .no-print { display: none !important; }
-  ion-content { --background: white; }
-}
 </style>

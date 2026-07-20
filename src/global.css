@@ -83,12 +83,119 @@ ion-badge.accent,
   --color: #1a1a1a;
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────── */
+/* ── Buttons: Forest Green primary + clear press feedback ────────── */
 ion-button {
   --border-radius: 10px;
   font-weight: 600;
   letter-spacing: 0.01em;
   text-transform: none;
+  --ripple-color: rgba(255, 255, 255, 0.35);
+  transition: opacity 0.15s ease, transform 0.12s ease;
+}
+
+/* Solid / default buttons press state */
+ion-button:not(.button-clear):not(.button-outline):active,
+ion-button:not(.button-clear):not(.button-outline).ion-activated {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+
+/* Outline / clear buttons: soft tint + opacity on press */
+ion-button.button-outline:active,
+ion-button.button-outline.ion-activated,
+ion-button.button-clear:active,
+ion-button.button-clear.ion-activated {
+  opacity: 0.72;
+}
+
+/* Ensure primary CTAs resolve to LGU Forest Green */
+ion-button:not([color]):not(.button-clear):not(.button-outline),
+ion-button[color="primary"] {
+  --background: var(--mao-green);
+  --background-activated: var(--mao-green-mid);
+  --background-focused: var(--mao-green-mid);
+  --background-hover: var(--mao-green-mid);
+  --color: #ffffff;
+}
+
+/* Accent / highlight actions use Gold */
+ion-button[color="secondary"],
+ion-button.accent-btn {
+  --background: var(--mao-gold);
+  --background-activated: var(--mao-gold-strong);
+  --background-focused: var(--mao-gold-strong);
+  --background-hover: var(--mao-gold-strong);
+  --color: #1a1a1a;
+  --ripple-color: rgba(26, 71, 49, 0.2);
+}
+
+/* Segment / tab active indicators: Forest Green + Gold underline cue */
+ion-segment-button {
+  --color-checked: var(--mao-green);
+  --indicator-color: var(--mao-gold);
+  font-weight: 600;
+}
+
+/* ── Data tables: responsive + horizontal scan hover ─────────────── */
+.table-wrap,
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--mao-border);
+  border-radius: var(--mao-radius);
+  background: var(--mao-card);
+}
+
+.table-wrap > table,
+.table-responsive > table,
+table.mao-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.table-wrap th,
+.table-responsive th,
+.mao-table th {
+  text-align: left;
+  background: var(--mao-green);
+  color: #ffffff;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table-wrap td,
+.table-responsive td,
+.mao-table td {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--mao-border);
+  color: var(--mao-text);
+  vertical-align: middle;
+  font-size: 0.88rem;
+}
+
+.table-wrap tbody tr:last-child td,
+.table-responsive tbody tr:last-child td,
+.mao-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Light gray hover helps admins track a row horizontally */
+.table-wrap tbody tr:hover td,
+.table-responsive tbody tr:hover td,
+.mao-table tbody tr:hover td {
+  background: #f3f4f6;
+}
+
+.table-wrap tbody tr:hover:has(td[colspan]) td,
+.table-responsive tbody tr:hover:has(td[colspan]) td,
+.mao-table tbody tr:hover:has(td[colspan]) td {
+  background: transparent;
 }
 
 /* ── Admin split-pane sidebar (used by AdminLayout) ──────────────── */
@@ -113,3 +220,151 @@ ion-button {
     box-shadow: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Global Print CSS — isolate documents for A4 export
+   Use: wrap printable markup in .print-document
+        mark chrome/actions with .no-print
+        use .print-only for screen-hidden, print-visible regions
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Screen: print-only regions stay hidden until window.print() */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 20mm;
+  }
+
+  /* Hide Ionic app shell & chrome — never print these */
+  ion-header,
+  ion-menu,
+  ion-tab-bar,
+  ion-fab,
+  ion-footer,
+  ion-toolbar,
+  ion-menu-button,
+  ion-split-pane::part(side),
+  .responsive-split::part(side),
+  .sidebar-item,
+  .tech-tabbar,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Unlock Ionic scroll containers so multi-page documents flow */
+  html,
+  body,
+  ion-app,
+  ion-router-outlet,
+  ion-split-pane,
+  .responsive-split,
+  ion-page,
+  .ion-page,
+  ion-content,
+  ion-content::part(scroll),
+  ion-content::part(background),
+  .inner-scroll,
+  .scroll-content {
+    position: relative !important;
+    overflow: visible !important;
+    contain: none !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+  }
+
+  ion-content {
+    --background: transparent !important;
+    --offset-top: 0 !important;
+    --offset-bottom: 0 !important;
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    --padding-top: 0 !important;
+    --padding-bottom: 0 !important;
+  }
+
+  ion-page,
+  .ion-page {
+    --background: transparent !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    display: block !important;
+  }
+
+  ion-modal,
+  ion-modal::part(content),
+  ion-modal::part(backdrop) {
+    position: static !important;
+    inset: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  ion-modal::part(backdrop) {
+    display: none !important;
+  }
+
+  /* Reveal screen-hidden print regions */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Printable document surface — clean A4 output */
+  .print-document {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-document table {
+    width: 100% !important;
+    min-width: 0 !important;
+    page-break-inside: auto;
+  }
+
+  .print-document tr,
+  .print-document img {
+    page-break-inside: avoid;
+  }
+
+  .print-document thead {
+    display: table-header-group;
+  }
+
+  .print-document h1,
+  .print-document h2,
+  .print-document h3,
+  .print-document h4 {
+    color: #000 !important;
+    page-break-after: avoid;
+  }
+
+  /* Soften branded table headers for ink-friendly paper */
+  .print-document .table-wrap,
+  .print-document .table-responsive {
+    overflow: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+}
+

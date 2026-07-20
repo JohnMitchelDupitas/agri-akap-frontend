@@ -221,21 +221,21 @@ const login = async () => {
 }
 
 .custom-input:focus-within {
-  border-color: #4caf50;
+  border-color: #1a4731;
   --background: #ffffff;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+  box-shadow: 0 4px 12px rgba(26, 71, 49, 0.15);
   transform: translateY(-2px);
 }
 
 .input-icon {
-  color: #2d884d;
+  color: #1a4731;
   font-size: 1.25rem;
   margin-right: 0.75rem;
   transition: color 0.3s ease;
 }
 
 .custom-input:focus-within .input-icon {
-  color: #1b5e20;
+  color: #2a6648;
 }
 
 .toggle-password-btn {
@@ -252,7 +252,7 @@ const login = async () => {
 }
 
 .forgot-password a {
-  color: #2d884d;
+  color: #1a4731;
   font-size: 0.9rem;
   text-decoration: none;
   font-weight: 600;
@@ -260,27 +260,29 @@ const login = async () => {
 }
 
 .forgot-password a:hover {
-  color: #1b5e20;
+  color: #2a6648;
   text-decoration: underline;
 }
 
-/* Main Button */
+/* Main Button — LGU Forest Green */
 .login-button {
-  --background: linear-gradient(135deg, #4caf50, #2d884d);
-  --background-hover: #388e3c;
-  --background-activated: #1b5e20;
+  --background: #1a4731;
+  --background-hover: #2a6648;
+  --background-activated: #173e2b;
   --border-radius: 16px;
-  --box-shadow: 0 8px 20px rgba(45, 136, 77, 0.4);
+  --box-shadow: 0 8px 20px rgba(26, 71, 49, 0.35);
+  --ripple-color: rgba(212, 175, 55, 0.35);
   margin: 0;
   height: 56px;
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
-  transition: transform 0.2s active;
+  transition: transform 0.2s ease, opacity 0.15s ease;
 }
 
 .login-button:active {
   transform: scale(0.98);
+  opacity: 0.9;
 }
 
 /* Keyframe Animations */
