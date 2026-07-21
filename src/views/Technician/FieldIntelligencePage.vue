@@ -27,6 +27,14 @@
             <ion-icon slot="start" :icon="leafOutline"></ion-icon>
             LGU Planting Log
           </ion-button>
+          <ion-button expand="block" class="lgu-btn response" router-link="/tech/pest-response">
+            <ion-icon slot="start" :icon="medkitOutline"></ion-icon>
+            Pest &amp; Disease Response
+          </ion-button>
+          <ion-button expand="block" class="lgu-btn calamity" router-link="/tech/calamity-rdana">
+            <ion-icon slot="start" :icon="thunderstormOutline"></ion-icon>
+            RDANA — Calamity Assessment
+          </ion-button>
           <ion-button expand="block" fill="outline" class="lgu-btn outline" router-link="/tech/pest-validation">
             <ion-icon slot="start" :icon="bugOutline"></ion-icon>
             Pest &amp; Disease Validation
@@ -174,7 +182,12 @@
 
         <!-- ── PEST REPORT TAB ── -->
         <div v-if="activeTab === 'pest'" class="animate-fade">
-          <p class="tab-desc">Report invasive species or crop disease to alert MAO immediately.</p>
+          <p class="tab-desc">Respond to barangay pest reports — validate on-site, advise farmers, and dispense interventions.</p>
+
+          <ion-button expand="block" class="lgu-btn response pest-cta" router-link="/tech/pest-response">
+            <ion-icon slot="start" :icon="medkitOutline"></ion-icon>
+            Open Pest &amp; Disease Response Workflow
+          </ion-button>
 
           <ion-card class="form-card border-danger">
             <ion-card-content>
@@ -291,7 +304,7 @@ import {
   IonInput, IonTextarea, IonSelect, IonSelectOption, IonRow, IonCol, IonButton, IonIcon,
   IonAlert, toastController,
 } from '@ionic/vue';
-import { leafOutline, bugOutline, locationOutline } from 'ionicons/icons';
+import { leafOutline, bugOutline, locationOutline, medkitOutline, thunderstormOutline } from 'ionicons/icons';
 import { Geolocation } from '@capacitor/geolocation';
 import axiosInstance from '@/utils/axios';
 
@@ -474,7 +487,10 @@ onMounted(() => fetchPlots());
 .form-wrapper { max-width: 600px; margin: 0 auto; padding-top: 0.5rem; }
 .lgu-links { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
 .lgu-btn { text-transform: none; font-weight: 700; --background: #1a4731; margin: 0; }
+.lgu-btn.response { --background: #d4af37; --color: #1a4731; }
+.lgu-btn.calamity { --background: #dc2626; --color: #fff; }
 .lgu-btn.outline { --border-color: #1a4731; --color: #1a4731; }
+.pest-cta { margin-bottom: 1rem; min-height: 52px; font-size: 1rem; }
 .tab-desc { font-size: 0.88rem; color: #64748b; margin: 0.5rem 0 1rem; }
 .form-card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; margin: 0; }
 .border-danger { border-top: 4px solid #c0392b; }

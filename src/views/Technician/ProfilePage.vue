@@ -2,9 +2,6 @@
   <ion-page>
     <ion-header>
       <ion-toolbar color="primary">
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/tech/home"></ion-back-button>
-        </ion-buttons>
         <ion-title>My Profile</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -75,7 +72,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonList, IonItem, IonLabel, IonIcon, IonChip, IonBadge, IonButton, alertController,
 } from '@ionic/vue';
 import {

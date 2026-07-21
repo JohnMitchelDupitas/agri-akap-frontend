@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar color="primary">
         <ion-buttons slot="start">
-          <ion-menu-button></ion-menu-button>
+          <ion-back-button default-href="/tech/dashboard"></ion-back-button>
         </ion-buttons>
         <ion-title>Subsidy Distribution</ion-title>
         <ion-buttons slot="end">
@@ -113,7 +113,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonSelect, IonSelectOption,
   IonButton, IonIcon, IonItem, IonChip, IonLabel, IonBadge, IonProgressBar,
   toastController,

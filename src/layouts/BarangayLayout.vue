@@ -52,6 +52,7 @@ import {
 } from '@ionic/vue';
 import {
   homeOutline, leafOutline, bugOutline, shieldCheckmarkOutline, logOutOutline,
+  flowerOutline, basketOutline, thunderstormOutline,
 } from 'ionicons/icons';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -62,6 +63,9 @@ const pages = [
   { title: 'Barangay Dashboard', url: '/brgy/dashboard', icon: homeOutline },
   { title: 'Master Seasonal Planting Log', url: '/brgy/planting-ledger', icon: leafOutline },
   { title: 'Pest & Disease Monitoring Log', url: '/brgy/pest-monitoring', icon: bugOutline },
+  { title: 'Standing Crop Log', url: '/brgy/standing-crop', icon: flowerOutline },
+  { title: 'Harvesting Log', url: '/brgy/harvesting', icon: basketOutline },
+  { title: 'Damage & Calamity Assessment', url: '/brgy/calamity-assessment', icon: thunderstormOutline },
   { title: 'Damage Review', url: '/brgy/damage-review', icon: shieldCheckmarkOutline },
 ];
 

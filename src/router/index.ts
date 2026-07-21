@@ -5,7 +5,7 @@ import { useAuthStore } from "../stores/authStore";
 // ── Role home helper ──────────────────────────────────────────────────────────
 export const homeForRole = (role: string | null): string => {
   if (role === "admin") return "/admin/dashboard";
-  if (role === "technician") return "/tech/scanner";
+  if (role === "technician") return "/tech/dashboard";
   if (role === "barangay_official") return "/brgy/dashboard";
   return "/login";
 };
@@ -63,12 +63,19 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/layouts/TechnicianLayout.vue"),
     meta: { requiresAuth: true, role: "technician" },
     children: [
-      { path: "", redirect: "/tech/scanner" },
+      { path: "", redirect: "/tech/dashboard" },
+      { path: "dashboard", name: "TechDashboard", component: () => import("@/views/Technician/TechnicianDashboardView.vue") },
+      { path: "history", name: "TechHistory", component: () => import("@/views/Technician/TechnicianHistoryView.vue") },
+      { path: "subsidy-dispense", name: "MobileSubsidyDispense", component: () => import("@/views/Technician/MobileSubsidyDispenseView.vue") },
       { path: "scanner", name: "Scan", component: () => import("@/views/Scanner/ScannerPage.vue") },
       { path: "release", name: "Release", component: () => import("@/views/Scanner/ReleasePage.vue") },
       { path: "field", name: "FieldIntelligence", component: () => import("@/views/Technician/FieldIntelligencePage.vue") },
       { path: "planting-log", name: "MobilePlantingLog", component: () => import("@/views/Technician/MobilePlantingLogView.vue") },
       { path: "pest-validation", name: "MobilePestValidation", component: () => import("@/views/Technician/MobilePestValidationView.vue") },
+      { path: "pest-response", name: "MobilePestResponse", component: () => import("@/views/Technician/MobilePestResponseView.vue") },
+      { path: "pest-queue", name: "MobilePestQueue", component: () => import("@/views/Technician/MobilePestQueueView.vue") },
+      { path: "calamity-rdana", name: "MobileCalamityAssessment", component: () => import("@/views/Technician/MobileCalamityAssessmentView.vue") },
+      { path: "calamity-queue", name: "MobileCalamityQueue", component: () => import("@/views/Technician/MobileCalamityQueueView.vue") },
       { path: "farm-profiling", name: "FarmProfiling", component: () => import("@/views/Technician/FarmProfilingView.vue") },
       { path: "geo-tag", name: "MobileGeoTag", component: () => import("@/views/Technician/MobileGeoTagView.vue") },
       { path: "extension", name: "ExtensionServices", component: () => import("@/views/Technician/ExtensionServicesView.vue") },
@@ -93,6 +100,9 @@ const routes: Array<RouteRecordRaw> = [
       { path: "dashboard", name: "BrgyDashboard", component: () => import("@/views/Barangay/DashboardView.vue") },
       { path: "planting-ledger", name: "BrgyPlantingLedger", component: () => import("@/views/Barangay/PlantingLedgerView.vue") },
       { path: "pest-monitoring", name: "BrgyPestMonitoring", component: () => import("@/views/Barangay/PestMonitoringView.vue") },
+      { path: "standing-crop", name: "BrgyStandingCrop", component: () => import("@/views/Barangay/StandingCropLogView.vue") },
+      { path: "harvesting", name: "BrgyHarvesting", component: () => import("@/views/Barangay/HarvestingLogView.vue") },
+      { path: "calamity-assessment", name: "BrgyCalamityAssessment", component: () => import("@/views/Barangay/CalamityAssessmentLogView.vue") },
       { path: "damage-review", name: "BrgyDamageReview", component: () => import("@/views/Admin/DamageValidationView.vue") },
       { path: "map", name: "BrgyMap", component: () => import("@/views/Map/MapPage.vue") },
     ],
@@ -130,14 +140,14 @@ const routes: Array<RouteRecordRaw> = [
     path: "/damage-review",
     redirect: legacy({ admin: "/admin/damage-review", barangay_official: "/brgy/damage-review" }, "/admin/damage-review"),
   },
-  { path: "/scan", redirect: "/tech/scanner" },
-  { path: "/ScanQR", redirect: "/tech/scanner" },
-  { path: "/field-intelligence", redirect: "/tech/field" },
-  { path: "/field-intel", redirect: "/tech/field" },
-  { path: "/damage-assessment", redirect: "/tech/damage" },
+  { path: "/scan", redirect: "/tech/subsidy-dispense" },
+  { path: "/ScanQR", redirect: "/tech/subsidy-dispense" },
+  { path: "/field-intelligence", redirect: "/tech/dashboard" },
+  { path: "/field-intel", redirect: "/tech/dashboard" },
+  { path: "/damage-assessment", redirect: "/tech/calamity-queue" },
   { path: "/pending-sync", redirect: "/tech/sync" },
-  { path: "/home", redirect: "/tech/home" },
-  { path: "/technician-home", redirect: "/tech/home" },
+  { path: "/home", redirect: "/tech/dashboard" },
+  { path: "/technician-home", redirect: "/tech/dashboard" },
 
   // Catch-all: bounce to login (guard then routes to the correct home).
   { path: "/:pathMatch(.*)*", redirect: "/login" },
