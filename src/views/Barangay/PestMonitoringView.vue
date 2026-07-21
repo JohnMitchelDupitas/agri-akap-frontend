@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, defineAsyncComponent } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonButton, IonIcon, IonInput, IonSelect, IonSelectOption, toastController,
@@ -167,8 +167,8 @@ import {
   formatBirthday,
   type FarmerOption,
 } from '@/composables/useBarangayFarmerSearch';
-import PestMonitoringPrint from '@/components/PestMonitoringPrint.vue';
 import EmptyState from '@/components/EmptyState.vue';
+const PestMonitoringPrint = defineAsyncComponent(() => import('@/components/PestMonitoringPrint.vue'));
 
 interface PestEntry {
   id: string;

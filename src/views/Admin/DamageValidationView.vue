@@ -9,7 +9,7 @@
         <ion-buttons slot="end" v-if="canApprove">
           <ion-button class="export-btn no-print" @click="exportApprovedList" :disabled="exportLoading">
             <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
-            Export Approved List
+            Export LGU Damage Report
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -43,7 +43,7 @@
             label-placement="stacked"
             interface="popover"
             :value="filters.severity"
-            @ionChange="(e: any) => filters.severity = e.detail.value"
+            @ionChange="onSeverityChange"
           >
             <ion-select-option value="">All Levels</ion-select-option>
             <ion-select-option value="Low">Low</ion-select-option>
@@ -90,7 +90,7 @@
 
         <template v-else>
           <EmptyState
-            v-if="!filteredReports.length"
+            v-if="!reports.length"
             variant="documents"
             title="No damage reports"
             message="No pending damage reports found. Adjust filters or wait for new technician submissions."
@@ -99,7 +99,7 @@
           />
 
           <template v-else>
-            <p class="record-count">{{ filteredReports.length }} record{{ filteredReports.length === 1 ? '' : 's' }}</p>
+            <p class="record-count">{{ reports.length }} record{{ reports.length === 1 ? '' : 's' }}</p>
 
             <div class="table-wrap">
               <table class="ledger-table mao-table">
@@ -117,7 +117,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, idx) in filteredReports" :key="row.id">
+                  <tr v-for="(row, idx) in reports" :key="row.id">
                     <td class="ta-center">{{ idx + 1 }}</td>
                     <td class="font-bold">{{ row.farmer_name }}</td>
                     <td>{{ row.barangay }}</td>
@@ -140,6 +140,30 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <div class="pagination-bar" v-if="pagination.lastPage > 1">
+              <ion-button
+                size="small"
+                fill="outline"
+                :disabled="pagination.currentPage <= 1 || isLoading"
+                @click="changePage(pagination.currentPage - 1)"
+              >
+                Previous
+              </ion-button>
+              <span class="page-meta">
+                Page {{ pagination.currentPage }} of {{ pagination.lastPage }}
+                <span class="page-dot">•</span>
+                {{ pagination.total }} total records
+              </span>
+              <ion-button
+                size="small"
+                fill="outline"
+                :disabled="pagination.currentPage >= pagination.lastPage || isLoading"
+                @click="changePage(pagination.currentPage + 1)"
+              >
+                Next
+              </ion-button>
             </div>
           </template>
         </template>
@@ -270,7 +294,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, defineAsyncComponent } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonButton, IonIcon, IonSelect, IonSelectOption, IonModal, IonSpinner,
@@ -282,10 +306,10 @@ import {
 } from 'ionicons/icons';
 import apiClient from '@/utils/axios';
 import { useAuthStore } from '@/stores/authStore';
-import SupportQualifiedListPrint from '@/components/SupportQualifiedListPrint.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import { supportAllocation } from '@/utils/supportAllocation';
+const SupportQualifiedListPrint = defineAsyncComponent(() => import('@/components/SupportQualifiedListPrint.vue'));
 
 export type ValidationStatus = 'Pending' | 'Verified' | 'Approved' | 'Rejected';
 
@@ -334,6 +358,12 @@ const modalOpen = ref(false);
 const selected = ref<DamageValidationReport | null>(null);
 const printRows = ref<any[]>([]);
 const printGeneratedAt = ref('');
+const pagination = reactive({
+  currentPage: 1,
+  lastPage: 1,
+  perPage: 20,
+  total: 0,
+});
 
 const canActOnSelected = computed(() => {
   if (!selected.value) return false;
@@ -390,16 +420,27 @@ const loadFilterOptions = async () => {
 const fetchList = async () => {
   isLoading.value = true;
   try {
-    const params: Record<string, string | number> = { per_page: 50 };
+    const params: Record<string, string | number> = {
+      page: pagination.currentPage,
+      per_page: pagination.perPage,
+    };
     if (filters.status) params.status = filters.status;
     if (filters.barangay) params.barangay = filters.barangay;
     if (filters.crop) params.commodity = filters.crop;
+    if (filters.severity) params.severity = filters.severity;
     const res = await apiClient.get('/damage-assessments', { params });
-    const rows = res.data?.data?.data ?? [];
+    const payload = res.data?.data ?? {};
+    const rows = payload.data ?? [];
     reports.value = rows.map(mapAssessment);
+    pagination.currentPage = Number(payload.current_page ?? pagination.currentPage);
+    pagination.lastPage = Number(payload.last_page ?? 1);
+    pagination.perPage = Number(payload.per_page ?? pagination.perPage);
+    pagination.total = Number(payload.total ?? rows.length);
   } catch {
     await toast('Failed to load damage assessments.', 'danger');
     reports.value = [];
+    pagination.lastPage = 1;
+    pagination.total = 0;
   } finally {
     isLoading.value = false;
   }
@@ -407,14 +448,22 @@ const fetchList = async () => {
 
 const onBarangayChange = (e: any) => {
   filters.barangay = e.detail.value;
+  pagination.currentPage = 1;
   fetchList();
 };
 const onCropChange = (e: any) => {
   filters.crop = e.detail.value;
+  pagination.currentPage = 1;
   fetchList();
 };
 const onStatusChange = (e: any) => {
   filters.status = e.detail.value;
+  pagination.currentPage = 1;
+  fetchList();
+};
+const onSeverityChange = (e: any) => {
+  filters.severity = e.detail.value;
+  pagination.currentPage = 1;
   fetchList();
 };
 
@@ -423,6 +472,13 @@ const clearFilters = () => {
   filters.severity = '';
   filters.crop = '';
   filters.status = authStore.userRole === 'barangay_official' ? 'Pending' : '';
+  pagination.currentPage = 1;
+  fetchList();
+};
+
+const changePage = (page: number) => {
+  if (page < 1 || page > pagination.lastPage || page === pagination.currentPage) return;
+  pagination.currentPage = page;
   fetchList();
 };
 
@@ -436,13 +492,6 @@ const severityClass = (pct: number) => {
   const s = severityLabel(pct);
   return s === 'Severe' ? 'sev-severe' : s === 'Moderate' ? 'sev-mod' : 'sev-low';
 };
-
-const filteredReports = computed(() =>
-  reports.value.filter((r) => {
-    if (filters.severity && severityLabel(r.damage_percentage) !== filters.severity) return false;
-    return true;
-  })
-);
 
 const formatDate = (d: string) => (d ? new Date(d).toLocaleDateString() : '-');
 
@@ -590,6 +639,22 @@ onMounted(async () => {
   margin: 0 0 0.5rem;
 }
 
+.pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.page-meta {
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+.page-dot {
+  margin: 0 0.3rem;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: white;
@@ -694,5 +759,7 @@ onMounted(async () => {
 @media (max-width: 640px) {
   .detail-grid { grid-template-columns: 1fr; }
   .export-btn { font-size: 0.75rem; }
+  .pagination-bar { justify-content: space-between; gap: 0.4rem; }
+  .page-meta { font-size: 0.75rem; }
 }
 </style>

@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, defineAsyncComponent } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton,
   IonButton, IonIcon, IonInput, IonSelect, IonSelectOption, toastController,
@@ -191,10 +191,10 @@ import {
   formatBirthday,
   type FarmerOption,
 } from '@/composables/useBarangayFarmerSearch';
-import PlantingLedgerPrint from '@/components/PlantingLedgerPrint.vue';
 import type { PlantingPrintMode } from '@/components/PlantingLedgerPrint.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import EmptyState from '@/components/EmptyState.vue';
+const PlantingLedgerPrint = defineAsyncComponent(() => import('@/components/PlantingLedgerPrint.vue'));
 
 interface PlantingEntry {
   id: string;

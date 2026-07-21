@@ -61,7 +61,7 @@ import {
 } from "@ionic/vue";
 import {
   homeOutline, homeSharp, leafOutline, leafSharp, personOutline, personSharp,
-  idCardOutline, megaphoneOutline, warningOutline, documentTextOutline, umbrellaOutline,
+  idCardOutline, megaphoneOutline, warningOutline, documentTextOutline,
   cubeOutline, fileTrayStackedOutline, shieldCheckmarkOutline, logOutOutline, mapOutline, mapSharp,
   analyticsOutline, analyticsSharp,
 } from "ionicons/icons";
@@ -91,7 +91,7 @@ const appPages: NavPage[] = [
   { title: "Agricultural Intelligence", url: "/admin/intelligence", iosIcon: leafOutline, mdIcon: leafSharp },
   { title: "GIS Map", url: "/admin/map", iosIcon: mapOutline, mdIcon: mapSharp },
   { title: "Damage Review", url: "/admin/damage-review", iosIcon: shieldCheckmarkOutline, mdIcon: shieldCheckmarkOutline },
-  { title: "PCIC Claims & Insurance", url: "/admin/pcic-claims", iosIcon: umbrellaOutline, mdIcon: umbrellaOutline },
+  { title: "Executive Reporting", url: "/admin/executive-reporting", iosIcon: documentTextOutline, mdIcon: documentTextOutline },
   { title: "Statutory Reports", url: "/admin/reports", iosIcon: documentTextOutline, mdIcon: documentTextOutline },
 ];
 

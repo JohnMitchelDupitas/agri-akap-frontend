@@ -52,8 +52,8 @@ const routes: Array<RouteRecordRaw> = [
       { path: "intelligence", name: "Intelligence", component: () => import("@/views/Intelligence/IntelligenceDashboardPage.vue") },
       { path: "map", name: "Map", component: () => import("@/views/Map/MapPage.vue") },
       { path: "reports", name: "Reports", component: () => import("@/views/Reports/ExecutiveReportPage.vue") },
+      { path: "executive-reporting", name: "ExecutiveReporting", component: () => import("@/views/Admin/ExecutiveReportingView.vue") },
       { path: "damage-review", name: "DamageReview", component: () => import("@/views/Admin/DamageValidationView.vue") },
-      { path: "pcic-claims", name: "PcicClaims", component: () => import("@/views/Damage/PcicClaimsPage.vue") },
     ],
   },
 

@@ -185,17 +185,21 @@ table.mao-table {
   border-bottom: none;
 }
 
-/* Light gray hover helps admins track a row horizontally */
-.table-wrap tbody tr:hover td,
-.table-responsive tbody tr:hover td,
-.mao-table tbody tr:hover td {
-  background: #f3f4f6;
-}
+/* Light gray hover helps admins track a row horizontally.
+   Restrict to pointer devices to avoid extra style work on touch. */
+@media (hover: hover) and (pointer: fine) {
+  .table-wrap tbody tr:hover td,
+  .table-responsive tbody tr:hover td,
+  .mao-table tbody tr:hover td {
+    background: #f3f4f6;
+  }
 
-.table-wrap tbody tr:hover:has(td[colspan]) td,
-.table-responsive tbody tr:hover:has(td[colspan]) td,
-.mao-table tbody tr:hover:has(td[colspan]) td {
-  background: transparent;
+  /* Avoid tinting "empty row" colspan cells (prevents expensive :has()). */
+  .table-wrap tbody tr:hover td[colspan],
+  .table-responsive tbody tr:hover td[colspan],
+  .mao-table tbody tr:hover td[colspan] {
+    background: transparent !important;
+  }
 }
 
 /* ── Admin split-pane sidebar (used by AdminLayout) ──────────────── */

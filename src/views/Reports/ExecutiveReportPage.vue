@@ -76,7 +76,7 @@
           <span class="export-label"><ion-icon :icon="downloadOutline"></ion-icon> Export CSV:</span>
           <ion-button size="small" fill="outline" @click="downloadCsv('farmers')">Farmers</ion-button>
           <ion-button size="small" fill="outline" @click="downloadCsv('distributions')">Distributions</ion-button>
-          <ion-button size="small" fill="outline" @click="downloadCsv('damage')">Damage (PCIC)</ion-button>
+          <ion-button size="small" fill="outline" @click="downloadCsv('damage')">Damage (LGU)</ion-button>
           <ion-button size="small" fill="outline" @click="downloadCsv('accomplishment')">Accomplishment</ion-button>
         </div>
       </div>
@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonMenuButton, IonButton,
@@ -163,7 +163,7 @@ import {
   refreshOutline, printOutline, downloadOutline, eyeOutline, documentOutline,
 } from 'ionicons/icons';
 import axiosInstance from '@/utils/axios';
-import StatutoryReportPrint from '@/components/StatutoryReportPrint.vue';
+const StatutoryReportPrint = defineAsyncComponent(() => import('@/components/StatutoryReportPrint.vue'));
 
 const REPORT_TYPES = [
   'Provincial Accomplishment Report',

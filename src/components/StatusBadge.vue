@@ -20,12 +20,18 @@ const props = defineProps<{
   status: string;
 }>();
 
+// Module-scope sets avoid per-instance array allocations.
+const APPROVED = new Set(['approved', 'claimed', 'active', 'success', 'synced', 'ready']);
+const PENDING = new Set(['pending', 'queued', 'awaiting', 'draft', 'submitted', 'syncing']);
+const REJECTED = new Set(['rejected', 'failed', 'closed', 'inactive', 'danger', 'not continued']);
+const VERIFIED = new Set(['verified', 'endorsed']);
+
 const normalized = computed(() => {
   const s = (props.status || '').trim().toLowerCase();
-  if (['approved', 'claimed', 'active', 'success', 'synced', 'ready'].includes(s)) return 'approved';
-  if (['pending', 'queued', 'awaiting', 'draft', 'submitted', 'syncing'].includes(s)) return 'pending';
-  if (['rejected', 'failed', 'closed', 'inactive', 'danger', 'not continued'].includes(s)) return 'rejected';
-  if (['verified', 'endorsed'].includes(s)) return 'verified';
+  if (APPROVED.has(s)) return 'approved';
+  if (PENDING.has(s)) return 'pending';
+  if (REJECTED.has(s)) return 'rejected';
+  if (VERIFIED.has(s)) return 'verified';
   return 'neutral';
 });
 

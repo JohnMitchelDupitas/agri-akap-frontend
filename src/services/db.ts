@@ -79,7 +79,7 @@ class AgriAkapDB extends Dexie {
       cachedFarmers: 'id, cached_at',
       cachedFarmPlots: 'id, cached_at',
     });
-    // v3 adds PCIC fields to queued assessments (calamity_type, crop_stage, area_destroyed_ha).
+    // v3 adds queued assessment fields (calamity_type, crop_stage, area_destroyed_ha).
     this.version(3).stores({
       pendingDistributions: 'client_id, status, created_at',
       pendingAssessments: 'client_id, status, created_at',

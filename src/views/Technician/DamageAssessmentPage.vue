@@ -306,7 +306,7 @@ const submitAssessment = async () => {
     return;
   }
   if (!form.value.photo_base64) {
-    await toast('A geotagged photo is strictly required for PCIC auditing.', 'danger');
+    await toast('A geotagged photo is strictly required for LGU validation.', 'danger');
     return;
   }
 
